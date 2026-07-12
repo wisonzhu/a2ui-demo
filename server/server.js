@@ -55,7 +55,7 @@ async function a2uiGen(prompt) {
   const system = `You are an A2UI generator. Output ONLY a JSON object.
 
 MUST use this EXACT structure:
-{"surfaceUpdate":{"components":[{"id":"root","component":{"Column":{"children":{"explicitList":["t1","f1","btn"]}}}},{"id":"t1","component":{"Text":{"text":{"literalString":"Title"},"usageHint":"h2"}}},{"id":"f1","component":{"TextField":{"label":{"literalString":"Name"},"text":{"path":"/name"}}}},{"id":"btn","component":{"Button":{"child":"btnLbl","action":{"name":"submit"}}}},{"id":"btnLbl","component":{"Text":{"text":{"literalString":"Submit"}}}}]}}
+{"surfaceUpdate":{"components":[{"id":"root","component":{"Column":{"children":["t1","f1","btn"]}}},{"id":"t1","component":{"Text":{"text":{"literalString":"Title"},"variant":"h2"}}},{"id":"f1","component":{"TextField":{"label":{"literalString":"Name"},"value":{"path":"/name"}}}},{"id":"btn","component":{"Button":{"child":"btnLbl","action":{"event":{"name":"submit"}}}}},{"id":"btnLbl","component":{"Text":{"text":{"literalString":"Submit"}}}}]}}
 
 TABLE EXAMPLE:
 {"id":"table1","component":{"Table":{"columns":["Name","Age","City"],"rows":[["Alice","25","NYC"],["Bob","30","LA"]]}}}
