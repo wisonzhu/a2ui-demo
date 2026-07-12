@@ -398,6 +398,62 @@ StorageClass: ssd-fast(512G已用380G) hdd-standard(1.5TB已用820G)`;
   
   return `Unknown data source: ${source}`;
 }
+async function dataAgent(prompt) {
+  const system = `You are a DevOps Data Agent. You have access to shell commands via a function call. Use run_command(cmd) to query system data. Then generate A2UI JSON to visualize findings. Steps:
+1. Decide what data is needed
+2. Call run_command with appropriate shell commands
+3. Analyze the results
+4. Generate A2UI surfaceUpdate JSON
+
+Available commands: "top -l 1 -n 0" (CPU), "vm_stat" (memory), "df -h" (disk), "ps aux -r | head -6" (processes), "uptime" (load), "hostname", "ifconfig en0", "netstat -an | head". Combine multiple commands separated by &&.
+IMPORTANT: First output a JSON with run_command calls, I'll return results, then you generate A2UI. Format:
+{step:"query", commands:["cmd1","cmd2"]}`;
+
+  let messages = [{role:'system',content:system},{role:'user',content:prompt}];
+  let resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    signal: AbortSignal.timeout(25000), method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+DEEPSEEK_KEY},
+    body:JSON.stringify({model:'deepseek-chat',messages,temperature:0.3,max_tokens:2000})
+  });
+  let data = await resp.json();
+  let text = data.choices?.[0]?.message?.content||'{}';
+  text = text.replace(/```json|```/g,'').trim();
+  
+  let step;
+  try { step = JSON.parse(text); } catch(e) { step = {}; }
+  
+  if (step.step === 'query' && step.commands) {
+    // Execute commands
+    let results = '';
+    for (let cmd of step.commands) {
+      try {
+        let out = execSync(cmd, {encoding:'utf8',timeout:10000}).slice(0,500);
+        results += `\n--- ${cmd} ---\n${out}`;
+      } catch(e) { results += `\n--- ${cmd} --- Error: ${e.message}`; }
+    }
+    
+    // Second call: generate A2UI with data
+    messages.push({role:'assistant',content:JSON.stringify(step)});
+    messages.push({role:'user',content:'Command results:\n'+results+'\n\nNow generate the A2UI JSON visualization based on this data. Output ONLY the surfaceUpdate JSON.'});
+    resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      signal: AbortSignal.timeout(30000), method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+DEEPSEEK_KEY},
+      body:JSON.stringify({model:'deepseek-chat',messages,temperature:0.3,max_tokens:8192})
+    });
+    data = await resp.json();
+    text = data.choices?.[0]?.message?.content||'{}';
+    text = text.replace(/```json|```/g,'').trim();
+  }
+  
+  let ui;
+  try { ui = JSON.parse(text); }
+  catch {
+    let m = text.match(/\{[\s\S]*\}/);
+    ui = m ? JSON.parse(m[0]) : {};
+  }
+  return ui;
+}
+
 async function a2uiGen(prompt) {
   const system = `You are an A2UI generator. Output ONLY a JSON object.
 
@@ -573,6 +629,21 @@ const server = http.createServer(async (req, res) => {
         const fullPrompt = realData ? `真实数据:\n${realData}\n\n用户需求:\n${prompt}` : prompt;
         const ui = await a2uiGen(fullPrompt);
         res.writeHead(200, {'Content-Type':'application/json'});
+        res.end(JSON.stringify({ success:true, ui }));
+      } catch (e) { res.end(JSON.stringify({ error: e.message })); }
+    });
+    return;
+  }
+
+  // Data Agent: LLM autonomously queries data + generates UI
+  if (url.pathname === '/a2ui/agent' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { prompt } = JSON.parse(body);
+        res.writeHead(200, {'Content-Type':'application/json'});
+        const ui = await dataAgent(prompt);
         res.end(JSON.stringify({ success:true, ui }));
       } catch (e) { res.end(JSON.stringify({ error: e.message })); }
     });
