@@ -285,14 +285,8 @@ plt.savefig("` + pngFile + `", dpi=100, bbox_inches='tight', facecolor='#0d1117'
 }
 
 const server = http.createServer(async (req, res) => {
-  // Force disable proxy for all outbound requests
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-  delete process.env.http_proxy;
-  delete process.env.https_proxy;
-  delete process.env.HTTP_PROXY;
-  delete process.env.HTTPS_PROXY;
-  delete process.env.all_proxy;
-  delete process.env.ALL_PROXY;
+  // Clear proxy env vars (may be set by system)
+  ['http_proxy','https_proxy','HTTP_PROXY','HTTPS_PROXY','all_proxy','ALL_PROXY'].forEach(k => delete process.env[k]);
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
