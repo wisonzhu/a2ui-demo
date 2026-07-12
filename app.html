@@ -518,11 +518,22 @@ function renderComponent(id, byId) {
       var cols = p.columns || [];
       var rows = p.rows || [];
       var h = '<table><thead><tr>';
-      for (var c = 0; c < cols.length; c++) h += '<th>' + resolve(cols[c]) + '</th>';
+      for (var c = 0; c < cols.length; c++) {
+        var col = cols[c];
+        // Support both {literalString} and {header} formats
+        h += '<th>' + (typeof col === 'string' ? col : resolve(col.header || col)) + '</th>';
+      }
       h += '</tr></thead><tbody>';
       for (var r = 0; r < rows.length; r++) {
         h += '<tr>';
-        for (var c2 = 0; c2 < rows[r].length; c2++) h += '<td>' + resolve(rows[r][c2]) + '</td>';
+        var row = rows[r];
+        if (Array.isArray(row)) {
+          // Flat array: [{"literalString":"Alice"}, ...]
+          for (var c2 = 0; c2 < row.length; c2++) h += '<td>' + resolve(row[c2]) + '</td>';
+        } else if (row.cells) {
+          // Cells format: {cells: [{"value":"Alice"}, ...]}
+          for (var c2 = 0; c2 < row.cells.length; c2++) h += '<td>' + resolve(row.cells[c2].value || row.cells[c2]) + '</td>';
+        }
         h += '</tr>';
       }
       return h + '</tbody></table>';
