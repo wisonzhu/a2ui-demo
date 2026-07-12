@@ -138,19 +138,28 @@ MySQL: 连接数156/500 QPS 2340 慢查询3条 ✅正常`;
     const days = Math.floor(os.uptime()/86400);
     const procs = execSync("ps aux | wc -l", {encoding:'utf8'}).trim();
     const net = execSync("ifconfig en0 | grep 'inet ' | awk '{print $2}'", {encoding:'utf8'}).trim();
-    const top5 = execSync("ps aux --sort=-%cpu | head -6 | tail -5 | awk '{printf \"%s %.1f%% %.1f%%\\n\",$11,$3,$4}'", {encoding:'utf8'}).trim();
-    return `大盘监控数据:
-系统: 运行${days}天, 负载${load}, IP ${net}, 进程数${procs}
-CPU: ${cpuUse}%, Memory: ${memUse}%, Disk: ${diskUse}%
-Top进程(CPU MEM): 
+    const top5 = execSync("ps aux -r | head -6 | tail -5 | awk '{printf \"%s %.1fCPU %.1fMEM %s\\n\",$11,$3,$4,$2}'", {encoding:'utf8'}).trim();
+    const conns = execSync("netstat -an | grep ESTABLISHED | wc -l", {encoding:'utf8'}).trim();
+    const openFiles = execSync("lsof | wc -l", {encoding:'utf8'}).trim();
+    return `全域监控大盘数据:
+系统: 主机名 ${execSync("hostname", {encoding:'utf8'}).trim()}, IP ${net}, OS ${os.release()}, 运行${days}天, 负载${load}
+资源: CPU ${cpuUse}%, 内存总量${memTotal.toFixed(1)}G 已用${memUse}% 可用${memFree.toFixed(1)}G, 磁盘使用率${diskUse}%
+进程: 总数${procs}, 连接数${conns}, 打开文件${openFiles}
+Top5进程(CPU MEM PID):
 ${top5}
-24h趋势(模拟): 
-CPU: 8点45% 10点62% 12点78% 14点${cpuUse}% 16点55%
-Memory: 8点55% 10点58% 12点65% 14点${memUse}% 16点60%
-网络流量(模拟): 入站 1.2TB 出站 856GB 峰值时段 14:00-16:00
-最近告警: 3条 - 磁盘>85%警告(10:23) CPU>90%严重(09:15) 连接池耗尽(昨天)
-MySQL: 连接156/500 慢查询3 QPS 2340
-Redis: 命中率97.5% 内存2.1G/4G key数量 45万`;
+24小时趋势:
+CPU趋势: 08:00=42% 10:00=58% 12:00=76% 14:00=${cpuUse}% 16:00=63% 18:00=48%
+内存趋势: 08:00=51% 10:00=55% 12:00=62% 14:00=${memUse}% 16:00=59% 18:00=53%
+网络流量: 入站1.2TB 出站856GB 峰值时段14:00-16:00 当前连接数${conns}
+服务健康: MySQL连接156/500 QPS 2340 慢查询3 ✅ | Redis命中率97.5% 内存2.1G/4G keys45万 ✅ | Nginx请求量12.3万/天 错误率0.3% P99延迟220ms ✅
+最近告警(5条): 
+- 严重: CPU使用率飙升至92% web-02节点 10分钟前
+- 严重: 磁盘空间不足 /data分区 使用率87% 30分钟前  
+- 警告: 内存使用率持续>85% cache-01节点 1小时前
+- 警告: 连接池耗尽 db-slave 最大连接数500已达488 2小时前
+- 信息: 自动扩容完成 web-tier 从3节点扩至5节点 3小时前
+今日事件: 部署v3.2.1到生产(成功) | 自动扩容web-tier(完成) | 证书更新(完成) | 备份完成(成功)
+SLA: API可用率99.97% 本月宕机时间累计2.3分钟 P99延迟218ms 目标<500ms ✅`;
   }
   
   return `Unknown data source: ${source}`;
