@@ -1,19 +1,57 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Test</title></head>
-<body style="background:#111;color:#eee;font-family:system-ui;padding:2rem">
-<h2>A2UI Test</h2>
-<textarea id="p" style="width:300px;height:60px">一个注册表单</textarea>
-<button id="b">Generate</button>
-<pre id="r"></pre>
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>A2UI</title>
+<style>
+body{font-family:system-ui;background:#111;color:#ddd;padding:2rem}
+input,textarea{background:#222;color:#ddd;border:1px solid #444;border-radius:6px;padding:.5rem;width:300px}
+button{padding:.5rem 1rem;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;margin:.5rem}
+label{display:block;margin:.5rem 0 .2rem;font-size:.85rem;color:#999}
+.render input,.render select{padding:.4rem;background:#1a1a2e;border:1px solid #333;border-radius:4px;color:#ddd}
+.render table{width:100%;border-collapse:collapse;margin:1rem 0}
+.render th{background:#2563eb;color:#fff;padding:.4rem .6rem;text-align:left}
+.render td{padding:.4rem .6rem;border-bottom:1px solid #333}
+</style></head>
+<body>
+<h2>A2UI Standard Protocol Test</h2>
+<input id="p" value="一个用户注册表单，包含姓名、邮箱、手机号" style="width:400px">
+<button onclick="g()">Generate</button>
+<div id="o"></div>
 <script>
-document.getElementById('b').onclick=async()=>{
-  var t=document.getElementById('p').value;
-  var x=new XMLHttpRequest();
-  x.open('POST','http://localhost:3456/a2ui/generate');
-  x.setRequestHeader('Content-Type','application/json');
-  x.onload=function(){
-    document.getElementById('r').textContent=JSON.stringify(JSON.parse(x.responseText),null,2).substring(0,2000);
-  };
-  x.send(JSON.stringify({prompt:t}));
-};
+var fd={};
+function rv(v){if(!v)return'';if(v.literalString!==undefined)return v.literalString;if(v.path)return fd[v.path.replace(/\//g,'')]||'';return''}
+function rc(id,m){var c=m[id];if(!c)return'';var t=Object.keys(c)[0],p=c[t];
+switch(t){
+case'Text':return'<'+ (p.usageHint||'span') +'>'+rv(p.text)+'</'+(p.usageHint||'span')+'>';
+case'TextField':var k=(p.text&&p.text.path||'').replace(/\//g,'');return'<label>'+rv(p.label)+'</label><input oninput="fd.'+k+'=this.value">';
+case'Button':return'<button>'+(p.child?rc(p.child,m):'OK')+'</button>';
+case'Column':case'Row':case'Card':
+var ks=p.children&&p.children.explicitList||[],h='',s=t==='Column'?'flex-direction:column;gap:8px':t==='Row'?'gap:8px':t==='Card'?'background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:1rem':'';
+for(var i=0;i<ks.length;i++)h+=rc(ks[i],m);
+return'<div style="display:flex;'+s+'">'+h+'</div>';
+case'Table':
+var col=p.columns||[],row=p.rows||[],h='<table><thead><tr>';
+for(var c=0;c<col.length;c++){var cl=col[c];h+='<th>'+(typeof cl==='string'?cl:rv(cl.header||cl))+'</th>'}
+h+='</tr></thead><tbody>';
+for(var r=0;r<row.length;r++){h+='<tr>';var rw=row[r],cells=Array.isArray(rw)?rw:(rw.cells||[]);for(var cc=0;cc<cells.length;cc++){var cell=cells[cc];h+='<td>'+(typeof cell==='string'?cell:rv(cell.value||cell))+'</td>'}h+='</tr>'}
+return h+'</tbody></table>';
+case'MultipleChoice':var k=(p.selections&&p.selections.path||'').replace(/\//g,''),s='<label>'+rv(p.label)+'</label><select onchange="fd.'+k+'=this.value"><option>Select</option>';for(var j=0;j<(p.options||[]).length;j++)s+='<option value="'+rv(p.options[j].value)+'">'+rv(p.options[j].label)+'</option>';return s+'</select>';
+case'Chart':return p.imageBase64?'<div style="text-align:center;margin:1rem 0"><img src="'+p.imageBase64+'" style="max-width:100%;border-radius:8px"></div>':'<div style="padding:1rem;background:#1a1a2e;border-radius:8px;text-align:center"><b>'+rv(p.title)+'</b></div>';
+}return''}
+
+function g(){
+ var v=document.getElementById('p').value.trim();if(!v)return;
+ fd={};
+ var x=new XMLHttpRequest();
+ x.open('POST','/a2ui/generate');
+ x.setRequestHeader('Content-Type','application/json');
+ x.onload=function(){
+  if(x.status!==200)return;
+  var d=JSON.parse(x.responseText);
+  if(d.error){document.getElementById('o').innerHTML='<p style="color:red">'+d.error+'</p>';return}
+  var cs=d.ui.surfaceUpdate.components,m={};
+  for(var i=0;i<cs.length;i++)m[cs[i].id]=cs[i].component;
+  document.getElementById('o').innerHTML='<div style="display:flex;flex-direction:column;gap:10px;max-width:500px">'+rc('root',m)+'</div>';
+ };
+ x.send(JSON.stringify({prompt:v}));
+}
 </script>
 </body></html>
