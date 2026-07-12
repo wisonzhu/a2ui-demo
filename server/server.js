@@ -1,4 +1,5 @@
 import http from 'node:http';
+import https from 'node:https';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +23,7 @@ async function* aguiStream(prompt) {
   yield { type: 'TEXT_MESSAGE_START', messageId: 'msg-1', role: 'assistant' };
   const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
     method: 'POST',
+    agent: new (require('https').Agent)({ rejectUnauthorized: false }),
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + DEEPSEEK_KEY },
     body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], stream: true })
   });
@@ -77,6 +79,7 @@ Every component MUST have "id" and "component" fields. Output ONLY valid JSON, n
 
   const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
     method: 'POST',
+    agent: new (require('https').Agent)({ rejectUnauthorized: false }),
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + DEEPSEEK_KEY },
     body: JSON.stringify({
       model: 'deepseek-chat',

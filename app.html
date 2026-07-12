@@ -1,809 +1,119 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>A2UI Studio</title>
+<title>A2UI Studio - Standard</title>
 <style>
-:root {
-  --bg: #0a0e14;
-  --surface: #12171f;
-  --border: #1e2733;
-  --text: #b8c5d6;
-  --muted: #5c6a7d;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --success: #22c55e;
-  --card: #161c26;
-  --input-bg: #0f141c;
-  --radius: 10px;
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
-
-/* Sidebar */
-.sidebar {
-  width: 400px;
-  min-width: 400px;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.sidebar-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.logo {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #e2e8f0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.logo span { color: var(--primary); }
-
-.sidebar-body {
-  flex: 1;
-  padding: 1.25rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  overflow-y: auto;
-}
-
-.label {
-  font-size: 0.8rem;
-  color: var(--muted);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.prompt-area {
-  width: 100%;
-  min-height: 100px;
-  background: var(--input-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
-  padding: 0.75rem;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  resize: vertical;
-  font-family: inherit;
-  transition: border-color 0.2s;
-}
-
-.prompt-area:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
-}
-
-.btn {
-  padding: 0.6rem 1.25rem;
-  border-radius: var(--radius);
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.btn-primary {
-  background: var(--primary);
-  color: #fff;
-}
-
-.btn-primary:hover { background: var(--primary-hover); }
-
-.btn-ghost {
-  background: transparent;
-  color: var(--muted);
-  border: 1px solid var(--border);
-}
-
-.btn-ghost:hover { color: var(--text); border-color: var(--muted); }
-
-.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.chip {
-  padding: 0.3rem 0.7rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  cursor: pointer;
-  background: var(--card);
-  color: var(--muted);
-  border: 1px solid var(--border);
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-
-.chip:hover {
-  color: var(--text);
-  border-color: var(--primary);
-  background: rgba(59,130,246,0.1);
-}
-
-.status {
-  font-size: 0.8rem;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.status-ok { color: var(--success); }
-
-/* Main */
-.main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.main-header {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.main-header h2 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #e2e8f0;
-}
-
-.main-body {
-  flex: 1;
-  padding: 1.5rem;
-  overflow-y: auto;
-}
-
-/* Rendered UI Styles */
-.render label {
-  display: block;
-  font-size: 0.8rem;
-  color: var(--muted);
-  margin: 0.6rem 0 0.2rem;
-  font-weight: 500;
-}
-
-.render input[type="text"],
-.render input[type="email"],
-.render input[type="password"],
-.render select {
-  width: 100%;
-  padding: 0.55rem 0.75rem;
-  background: var(--input-bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text);
-  font-size: 0.9rem;
-  font-family: inherit;
-  transition: border-color 0.2s;
-}
-
-.render input:focus,
-.render select:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-
-.render button {
-  padding: 0.55rem 1.25rem;
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-family: inherit;
-  transition: background 0.2s;
-}
-
-.render button:hover { background: var(--primary-hover); }
-
-.render table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 0.75rem 0;
-  font-size: 0.85rem;
-}
-
-.render th {
-  background: var(--primary);
-  color: #fff;
-  padding: 0.6rem 0.75rem;
-  text-align: left;
-  font-weight: 600;
-}
-
-.render td {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.render tr:hover td { background: var(--card); }
-
-.render dialog {
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--primary);
-  border-radius: 14px;
-  padding: 2rem;
-  max-width: 440px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-}
-
-.render dialog::backdrop { background: rgba(0,0,0,0.6); }
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-}
-
-.success-msg {
-  color: var(--success);
-  font-size: 0.85rem;
-  padding: 0.5rem 0;
-  border-top: 1px solid var(--border);
-  margin-top: 0.75rem;
-}
-
-/* Empty state */
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-  color: var(--muted);
-}
-
-.empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
-
-/* Drawer */
-.a2ui-drawer {
-  position: fixed; top: 0;
-  width: 340px; height: 100%;
-  background: #12171f;
-  box-shadow: 0 0 30px rgba(0,0,0,.6);
-  z-index: 999;
-  transition: transform .3s ease;
-  padding: 1.5rem;
-  overflow-y: auto;
-  color: #b8c5d6;
-}
-.a2ui-drawer.open { transform: translateX(0) !important; }
-
-/* Config panel */
-.config-section {
-  border-top: 1px solid var(--border);
-  padding: 1rem 1.5rem;
-}
-
-.config-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
-.config-grid input {
-  width: 100%;
-  padding: 0.4rem 0.6rem;
-  background: var(--input-bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  font-size: 0.8rem;
-  font-family: inherit;
-}
-
-details summary {
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 0.8rem;
-  padding: 0.3rem 0;
-}
-
-details summary:hover { color: var(--text); }
-
-pre {
-  font-size: 0.7rem;
-  max-height: 200px;
-  overflow: auto;
-  background: var(--bg);
-  border-radius: 6px;
-  padding: 0.75rem;
-  border: 1px solid var(--border);
-}
-
-/* Animations */
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--border);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-  display: none;
-}
-
-.spinner.active { display: inline-block; }
-
-.loading-text { display: none; color: var(--muted); font-size: 0.8rem; }
-.loading-text.active { display: block; }
-</style>
-</head>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0e14;--surface:#12171f;--border:#1e2733;--text:#b8c5d6;--primary:#3b82f6}
+body{font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh}
+.sidebar{width:400px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sidebar-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem}
+.sidebar-header b{color:#e2e8f0;font-size:1.1rem}
+.sidebar-body{flex:1;padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.75rem;overflow-y:auto}
+.sidebar-body label{font-size:.8rem;color:#5c6a7d;font-weight:500;text-transform:uppercase}
+.sidebar-body textarea{width:100%;min-height:100px;background:#0f141c;border:1px solid var(--border);border-radius:10px;color:var(--text);padding:.75rem;font-size:.9rem;resize:vertical;font-family:inherit}
+.sidebar-body textarea:focus{outline:none;border-color:var(--primary)}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem}
+.chip{background:#161c26;color:#5c6a7d;border:1px solid var(--border);border-radius:20px;padding:.3rem .7rem;font-size:.75rem;cursor:pointer;transition:all .15s}
+.chip:hover{color:#b8c5d6;border-color:var(--primary)}
+button{cursor:pointer;font-family:inherit}
+.btn{padding:.55rem 1.25rem;border-radius:10px;font-size:.9rem;border:none;font-weight:500;transition:background .2s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#2563eb}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.main-header{padding:1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.main-header h2{font-size:1rem;color:#e2e8f0}
+.main-body{flex:1;padding:1.5rem;overflow-y:auto}
+.status{font-size:.8rem;color:#5c6a7d}
+.config-section{border-top:1px solid var(--border);padding:1rem 1.5rem}
+.config-section details summary{font-size:.8rem;color:#5c6a7d;cursor:pointer}
+.config-section input{width:100%;padding:.4rem .6rem;background:#0f141c;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.8rem;margin:.3rem 0;font-family:inherit}
+pre{font-size:.7rem;max-height:200px;overflow:auto;background:#0a0e14;border-radius:6px;padding:.75rem}
+a2ui-surface{display:block;min-height:100px}
+</style></head>
 <body>
 
-<!-- Sidebar -->
 <div class="sidebar">
-  <div class="sidebar-header">
-    <div class="logo">⚡ A2UI <span>Studio</span></div>
-  </div>
-  
+  <div class="sidebar-header"><b>⚡ A2UI Studio</b> <span style="font-size:.75rem;color:#22c55e">v0.9 Standard</span></div>
   <div class="sidebar-body">
-    <div>
-      <div class="label">Describe your UI</div>
-      <textarea class="prompt-area" id="prompt" placeholder="Describe the interface you want in natural language...&#10;&#10;e.g. A registration form with name, email, phone"></textarea>
+    <label>Describe your UI</label>
+    <textarea id="prompt" placeholder="一个用户注册表单，包含姓名、邮箱、手机号"></textarea>
+    <div class="chips">
+      <button class="chip" onclick="document.getElementById('prompt').value='一个用户注册表单，包含姓名、邮箱、手机号'">📝 注册表单</button>
+      <button class="chip" onclick="document.getElementById('prompt').value='一个数据表格，姓名、年龄、城市'">📊 表格</button>
+      <button class="chip" onclick="document.getElementById('prompt').value='一个柱状图显示各季度销售额'">📈 柱状图</button>
+      <button class="chip" onclick="document.getElementById('prompt').value='admin dashboard with user table, stats cards, and charts'">🖥 Admin</button>
     </div>
-    
-    <div>
-      <div class="chips">
-        <button class="chip" onclick="setPrompt('一个用户注册表单，包含姓名、邮箱、手机号')">📝 注册表单</button>
-        <button class="chip" onclick="setPrompt('一个用户数据表格，包含姓名、年龄、城市')">📊 数据表格</button>
-        <button class="chip" onclick="setPrompt('一个柱状图显示各季度销售额 Q1=100 Q2=200 Q3=150 Q4=300')">📈 柱状图</button>
-        <button class="chip" onclick="setPrompt('一个饼图显示各部门预算 开发=40 市场=30 行政=20 销售=10')">🥧 饼图</button>
-        <button class="chip" onclick="setPrompt('一个带弹窗的确认对话框')">💬 弹窗</button>
-        <button class="chip" onclick="setPrompt('一个带标签页的设置面板')">📑 标签页</button>
-        <button class="chip" onclick="setPrompt('一个折线图显示全年月度访问量')">📉 折线图</button>
-      </div>
-    </div>
-
-    <button class="btn btn-primary" onclick="generate()">
-      <span id="btnText">Generate UI</span>
-      <span class="spinner" id="spin"></span>
-    </button>
-    
-    <div class="loading-text" id="loading">DeepSeek is generating your UI...</div>
-
-    <details>
-      <summary>A2UI JSON</summary>
-      <pre id="jsonView">Click Generate to see JSON</pre>
-    </details>
+    <button class="btn btn-primary" onclick="generate()">Generate UI</button>
+    <details><summary>Generated JSON</summary><pre id="jsonView">Click Generate</pre></details>
   </div>
-  
   <div class="config-section">
-    <details>
-      <summary>⚙️ Model Settings</summary>
-      <div class="config-grid" style="margin-top:0.5rem">
-        <input id="cfgKey" type="password" placeholder="API Key" onchange="saveCfg()">
-        <input id="cfgModel" placeholder="deepseek-chat" onchange="saveCfg()">
-      </div>
+    <details open><summary>⚙️ Settings</summary>
+      <input id="cfgKey" type="password" placeholder="API Key">
+      <input id="cfgModel" value="deepseek-chat" placeholder="Model">
     </details>
   </div>
 </div>
 
-<!-- Main -->
 <div class="main">
-  <div class="main-header">
-    <h2>Generated UI</h2>
-    <span class="status" id="status"></span>
-  </div>
-  <div class="main-body render" id="render">
-    <div class="empty-state">
-      <div class="icon">🎨</div>
-      <p>Describe your UI on the left and click Generate</p>
-    </div>
-  </div>
+  <div class="main-header"><h2>Rendered UI</h2><span class="status" id="status"></span></div>
+  <div class="main-body" id="render"></div>
 </div>
 
-<script>
+<script type="module">
 // ============================================
-//  Data & State
+//  OFFICIAL A2UI SDK v0.9 - STANDARD PROTOCOL
 // ============================================
-var formData = {};
+import { Data } from '@a2ui/lit/0.8';
+import '@a2ui/lit/ui';
 
-function loadCfg() {
-  try { return JSON.parse(localStorage.getItem('a2ui_cfg') || '{}'); }
-  catch { return {}; }
-}
-
-function saveCfg() {
-  var c = {
-    key: document.getElementById('cfgKey').value,
-    model: document.getElementById('cfgModel').value
-  };
-  localStorage.setItem('a2ui_cfg', JSON.stringify(c));
-}
-
-(function initCfg() {
-  var c = loadCfg();
-  document.getElementById('cfgKey').value = c.key || '';
-  document.getElementById('cfgModel').value = c.model || 'deepseek-chat';
-})();
-
-// ============================================
-//  Helpers
-// ============================================
-function setPrompt(t) { document.getElementById('prompt').value = t; }
-
-function resolve(v) {
-  if (!v) return '';
-  if (v.literalString !== undefined) return v.literalString;
-  if (v.path) return formData[v.path.replace(/\//g, '')] || '';
-  return '';
-}
-
-function handleSubmit() {
-  var el = document.getElementById('render');
-  var parts = [];
-  for (var k in formData) if (formData[k]) parts.push(k + '=' + formData[k]);
-  if (parts.length) el.insertAdjacentHTML('beforeend', '<div class="success-msg">✅ ' + parts.join(', ') + '</div>');
-}
-
-function styleStr(s) {
-  if (!s) return '';
-  var css = '';
-  for (var k in s) css += k.replace(/([A-Z])/g,'-$1').toLowerCase() + ':' + s[k] + ';';
-  return css;
-}
-
-function renderKids(list, byId) {
-  var h = '', kids = list && list.explicitList || [];
-  for (var i = 0; i < kids.length; i++) h += renderComponent(kids[i], byId);
-  return h;
-}
-
-// ============================================
-//  Render Engine  
-// ============================================
-function renderComponent(id, byId) {
-  var c = byId[id];
-  if (!c) return '';
-  var t = Object.keys(c)[0];
-  var p = c[t];
-  var s = styleStr(p.style);
-
-  switch (t) {
-    case 'TextField': {
-      var key = (p.text && p.text.path || '').replace(/\//g, '');
-      return '<label>' + resolve(p.label) + '</label><input type="text" oninput="formData.' + key + '=this.value" placeholder="' + resolve(p.label) + '" style="' + s + '">';
-    }
-    case 'Button':
-      return '<button onclick="handleSubmit()"' + (s?' style="'+s+'"':'') + '>' + (p.child ? renderComponent(p.child, byId) : 'Submit') + '</button>';
-    case 'Column':
-      return '<div style="display:flex;flex-direction:column;gap:12px;' + s + '">' + renderKids(p.children, byId) + '</div>';
-    case 'Row':
-      return '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;' + s + '">' + renderKids(p.children, byId) + '</div>';
-    case 'Card':
-      return '<div class="card" style="' + s + '">' + renderKids(p.children, byId) + '</div>';
-    case 'Text': {
-      var tag = p.usageHint || 'span';
-      var ps = 'color:#e2e8f0;';
-      if (p.usageHint === 'h1') ps += 'font-size:1.5rem;font-weight:700;margin-bottom:0.5rem;';
-      else if (p.usageHint === 'h2') ps += 'font-size:1.15rem;font-weight:600;margin-bottom:0.3rem;';
-      return '<' + tag + ' style="' + ps + s + '">' + resolve(p.text) + '</' + tag + '>';
-    }
-    case 'MultipleChoice': {
-      var key = (p.selections && p.selections.path || '').replace(/\//g, '');
-      var opts = '<label>' + resolve(p.label) + '</label><select onchange="formData.' + key + '=this.value" style="' + s + '"><option value="">Select...</option>';
-      var choices = p.options || [];
-      for (var j = 0; j < choices.length; j++)
-        opts += '<option value="' + resolve(choices[j].value) + '">' + resolve(choices[j].label) + '</option>';
-      return opts + '</select>';
-    }
-    case 'Checkbox':
-      return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;' + s + '"><input type="checkbox" style="width:auto"> ' + resolve(p.label) + '</label>';
-    case 'Switch':
-      return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;' + s + '"><input type="checkbox"' + (p.checked ? ' checked' : '') + ' style="width:auto"> ' + resolve(p.label) + '</label>';
-    case 'Slider':
-      return '<label>' + resolve(p.label) + '</label><input type="range" min="' + (p.min || 0) + '" max="' + (p.max || 100) + '" value="' + (p.value || 50) + '" style="width:100%;' + s + '">';
-    case 'Rate': {
-      var h = '', max = p.max || 5, v = p.value || 0;
-      for (var j = 1; j <= max; j++) h += '<span style="cursor:pointer;font-size:1.2rem;' + (j <= v ? 'color:#f59e0b' : 'color:#333') + '">★</span>';
-      return '<div style="' + s + '">' + h + '</div>';
-    }
-    case 'DateTimePicker':
-      return '<label>' + resolve(p.label) + '</label><input type="datetime-local" style="' + s + '">';
-    case 'FileUpload':
-      return '<label style="display:block;' + s + '">' + resolve(p.label) + '</label><input type="file"' + (p.multiple ? ' multiple' : '') + (p.accept ? ' accept="' + p.accept + '"' : '') + '>';
-    case 'Table': {
-      var cols = p.columns || [], rows = p.rows || [];
-      var h = '<table><thead><tr>';
-      for (var c = 0; c < cols.length; c++) {
-        var col = cols[c];
-        h += '<th>' + (typeof col === 'string' ? col : resolve(col.header || col)) + '</th>';
-      }
-      h += '</tr></thead><tbody>';
-      for (var r = 0; r < rows.length; r++) {
-        h += '<tr>';
-        var row = rows[r], cells = Array.isArray(row) ? row : (row.cells || []);
-        for (var cc = 0; cc < cells.length; cc++) {
-          var cell = cells[cc];
-          h += '<td>' + (typeof cell === 'string' ? cell : resolve(cell.value || cell)) + '</td>';
-        }
-        h += '</tr>';
-      }
-      return h + '</tbody></table>';
-    }
-    case 'DataGrid': {
-      var gid = 'g' + Math.random().toString(36).slice(2,6);
-      var cols = p.columns || [], allRows = p.rows || [];
-      var pageSize = p.pageSize || 10;
-      var actions = p.actions || [];
-      // Store data globally
-      window['_dg_' + gid] = { rows: allRows, pageSize: pageSize, cols: cols, actions: actions, page: 0, filter: '' };
-      
-      function dgRenderTable(gid) {
-        var d = window['_dg_' + gid];
-        var cols = d.cols, rows = d.rows, page = d.page, ps = d.pageSize, filter = d.filter.toLowerCase();
-        var filtered = filter ? rows.filter(function(r){
-          var cells = Array.isArray(r) ? r : (r.cells||[]);
-          return cells.some(function(c){ return (typeof c==='string'?c:(c.value||'')).toLowerCase().indexOf(filter)>=0; });
-        }) : rows;
-        var total = filtered.length, totalPages = Math.max(1, Math.ceil(total / ps));
-        if (page >= totalPages) page = d.page = totalPages - 1;
-        var start = page * ps, end = Math.min(start + ps, total);
-        var vis = filtered.slice(start, end);
-        
-        var h = '<thead><tr>';
-        for (var c = 0; c < cols.length; c++) h += '<th>' + (cols[c].header || cols[c]) + '</th>';
-        if (actions.length) h += '<th style="width:120px">Actions</th>';
-        h += '</tr></thead><tbody>';
-        
-        for (var r = 0; r < vis.length; r++) {
-          var row = vis[r], cells = Array.isArray(row) ? row : (row.cells||[]);
-          h += '<tr>';
-          for (var i = 0; i < cells.length; i++) {
-            h += '<td>' + (typeof cells[i]==='string' ? cells[i] : (cells[i].value||'')) + '</td>';
-          }
-          if (actions.length) {
-            h += '<td style="display:flex;gap:4px">';
-            for (var a = 0; a < actions.length; a++) {
-              var act = actions[a];
-              h += '<button data-dg="' + gid + '" data-action="' + act + '" data-row="' + (start + r) + '" style="padding:2px 8px;font-size:.7rem;border-radius:4px;cursor:pointer;' + (act==='delete'?'background:rgba(239,68,68,.2);color:#ef4444;border:1px solid rgba(239,68,68,.3)':act==='edit'?'background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid rgba(59,130,246,.3)':'background:rgba(34,197,94,.2);color:#22c55e;border:1px solid rgba(34,197,94,.3)') + '">' + act + '</button>';
-            }
-            h += '</td>';
-          }
-          h += '</tr>';
-        }
-        h += '</tbody>';
-        
-        // Paginator
-        h += '<tfoot><tr><td colspan="' + (cols.length + (actions.length?1:0)) + '">';
-        h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;font-size:.8rem;color:#999">';
-        h += '<span>Showing ' + (start+1) + '-' + end + ' of ' + total + '</span>';
-        h += '<div style="display:flex;gap:2px">';
-        h += '<button data-dg="' + gid + '" data-page="prev" ' + (page<=0?'disabled':'') + ' style="padding:3px 8px;font-size:.75rem">◀</button>';
-        for (var pg = 0; pg < totalPages; pg++) {
-          h += '<button data-dg="' + gid + '" data-page="' + pg + '" style="padding:3px 8px;font-size:.75rem;' + (pg===page?'background:#3b82f6;color:#fff':'') + '">' + (pg+1) + '</button>';
-        }
-        h += '<button data-dg="' + gid + '" data-page="next" ' + (page>=totalPages-1?'disabled':'') + ' style="padding:3px 8px;font-size:.75rem">▶</button>';
-        h += '</div></div></td></tr></tfoot>';
-        
-        document.getElementById(gid + '-table').innerHTML = h;
-      }
-      
-      var h = '<div style="' + s + '">';
-      if (p.title) h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem"><h3 style="color:#e2e8f0;margin:0">' + resolve(p.title) + '</h3><button data-dg="' + gid + '" data-action="create" style="padding:4px 12px;background:#22c55e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.8rem">+ New</button></div>';
-      h += '<input placeholder="Search..." data-dg-search="' + gid + '" style="margin-bottom:.5rem;width:100%;max-width:300px;padding:.4rem .6rem;background:#0f141c;border:1px solid #1e2733;border-radius:6px;color:#b8c5d6;font-size:.8rem">';
-      h += '<table id="' + gid + '-table"></table></div>';
-      
-      setTimeout(function(){ dgRenderTable(gid); }, 10);
-      return h;
-    }
-    case 'Pagination':
-      return '<div style="display:flex;gap:4px;' + s + '">' + Array.from({length: p.totalPages||1}, function(_,i){return '<button style="padding:.25rem .5rem;font-size:.8rem">' + (i+1) + '</button>';}).join('') + '</div>';
-    case 'Modal': {
-      var mid = 'mdl' + Math.random().toString(36).slice(2,8);
-      return '<button data-modal="' + mid + '" style="' + s + '">' + (resolve(p.triggerText) || 'Open') + '</button>' +
-        '<dialog id="' + mid + '"><h3 style="color:#e2e8f0;margin-bottom:1rem">' + resolve(p.title) + '</h3>' +
-        (p.content ? renderKids(p.content, byId) : '') +
-        '<br><button data-close="' + mid + '" style="margin-top:1rem">Close</button></dialog>';
-    }
-    case 'Tabs': {
-      var tid = 'tab' + Math.random().toString(36).slice(2,6);
-      var tabs = p.tabs || [], contents = p.contents || [];
-      var bar = '<div style="display:flex;gap:4px;margin-bottom:.75rem;' + s + '">';
-      for (var ti = 0; ti < tabs.length; ti++)
-        bar += '<button class="btn btn-ghost btn-sm" data-tab="' + tid + '" data-idx="' + ti + '">' + resolve(tabs[ti]) + '</button>';
-      bar += '</div><div>';
-      for (var ci = 0; ci < contents.length; ci++)
-        bar += '<div data-tabs="' + tid + '" style="display:' + (ci===0?'block':'none') + '">' + renderKids(contents[ci], byId) + '</div>';
-      return bar + '</div>';
-    }
-    case 'Drawer': {
-      var did = 'drw' + Math.random().toString(36).slice(2,6);
-      var pos = p.placement === 'left' ? 'left:0' : 'right:0';
-      var trans = p.placement === 'left' ? '-100%' : '100%';
-      return '<button data-drawer="' + did + '" style="' + s + '">' + (resolve(p.triggerText) || 'Open') + '</button>' +
-        '<div id="' + did + '" class="a2ui-drawer" style="' + pos + ';transform:translateX(' + trans + ')">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><h3 style="color:#e2e8f0">' + resolve(p.title) + '</h3><button data-close-drawer="' + did + '" style="background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer">✕</button></div>' +
-        (p.children ? renderKids(p.children, byId) : '') + '</div>';
-    }
-    case 'Menu': {
-      var h = '<div style="display:flex;flex-direction:' + (p.mode==='horizontal'?'row':'column') + ';gap:4px;' + s + '">';
-      var renderMenuItem = function(items) {
-        var out = '';
-        for (var i = 0; i < items.length; i++) {
-          var it = items[i];
-          out += '<div class="menu-item">' + (it.icon||'') + ' ' + resolve(it.label);
-          if (it.children) out += '<div>' + renderMenuItem(it.children) + '</div>';
-          out += '</div>';
-        }
-        return out;
-      };
-      return h + renderMenuItem(p.items || []) + '</div>' +
-        '<style>.menu-item{padding:.5rem 1rem;cursor:pointer;border-radius:6px;transition:background .2s}.menu-item:hover{background:rgba(59,130,246,.15)}</style>';
-    }
-    case 'Breadcrumb':
-      return '<div style="display:flex;gap:4px;align-items:center;color:#999;font-size:.85rem;' + s + '">' + (p.items||[]).map(function(it,i){return '<span>' + (i>0?' / ':'') + resolve(it.label) + '</span>';}).join('') + '</div>';
-    case 'Steps': {
-      var h = '<div style="display:flex;gap:2rem;' + s + '">';
-      (p.items||[]).forEach(function(st,i){
-        var status = st.status || 'wait', color = status==='finish'?'#22c55e':status==='process'?'#3b82f6':'#333';
-        h += '<div style="flex:1;text-align:center"><div style="width:24px;height:24px;border-radius:50%;background:' + color + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem">' + (i+1) + '</div><div style="font-size:.8rem;margin-top:.25rem">' + resolve(st.title) + '</div></div>';
-      });
-      return h + '</div>';
-    }
-    case 'Message':
-      return '<div style="padding:.75rem 1rem;border-radius:8px;margin:.5rem 0;' + (p.type==='success'?'background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.3)':p.type==='error'?'background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3)':p.type==='warning'?'background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.3)':'background:rgba(59,130,246,.1);color:#3b82f6;border:1px solid rgba(59,130,246,.3)') + ';' + s + '">' + resolve(p.content) + '</div>';
-    case 'Notification':
-      return '<div style="position:fixed;top:1rem;right:1rem;background:#12171f;border:1px solid ' + (p.type==='error'?'#ef4444':p.type==='warning'?'#f59e0b':'#3b82f6') + ';border-radius:10px;padding:1rem;box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:999;' + s + '"><b style="color:#e2e8f0">' + resolve(p.title) + '</b><p style="color:#999;margin:.25rem 0 0;font-size:.85rem">' + resolve(p.content) + '</p></div>';
-    case 'Tag':
-      return '<span style="display:inline-block;padding:.15rem .5rem;border-radius:12px;font-size:.75rem;' + (p.type==='success'?'background:rgba(34,197,94,.15);color:#22c55e':p.type==='warning'?'background:rgba(245,158,11,.15);color:#f59e0b':p.type==='danger'?'background:rgba(239,68,68,.15);color:#ef4444':'background:rgba(59,130,246,.15);color:#3b82f6') + ';' + s + '">' + resolve(p.text) + '</span>';
-    case 'Badge':
-      return '<span style="position:relative;display:inline-block;' + s + '">' + (p.child ? renderComponent(p.child, byId) : '') + '<sup style="position:absolute;top:-8px;right:-8px;background:#ef4444;color:#fff;border-radius:10px;padding:0 5px;font-size:.7rem;min-width:16px;text-align:center">' + (p.value||0) + '</sup></span>';
-    case 'Progress':
-      return '<div style="width:100%;' + s + '"><div style="background:#30363d;border-radius:8px;height:8px"><div style="background:#3b82f6;border-radius:8px;height:8px;width:' + (p.percent||0) + '%"></div></div><span style="font-size:.75rem;color:#999">' + (p.percent||0) + '%</span></div>';
-    case 'StatCard': {
-      var c = p.color || '#3b82f6';
-      return '<div class="card" style="text-align:center;' + s + '">' + (p.icon||'') + '<div style="font-size:1.5rem;font-weight:700;color:' + c + '">' + resolve(p.value) + '</div><div style="font-size:.8rem;color:#999;margin-top:.25rem">' + resolve(p.label) + '</div>' + (p.trend?'<div style="font-size:.75rem;color:' + (p.trend==='up'?'#22c55e':'#ef4444') + '">' + (p.trend==='up'?'↑':'↓') + '</div>':'') + '</div>';
-    }
-    case 'Accordion': {
-      var accId = 'acc' + Math.random().toString(36).slice(2,6);
-      var h = '<div style="' + s + '">';
-      (p.items||[]).forEach(function(it,i){
-        h += '<details style="margin-bottom:4px"><summary style="cursor:pointer;padding:.5rem;background:rgba(59,130,246,.05);border-radius:6px">' + resolve(it.title) + '</summary><div style="padding:.5rem">' + (it.content ? renderKids(it.content, byId) : '') + '</div></details>';
-      });
-      return h + '</div>';
-    }
-    case 'Timeline':
-      return '<div style="border-left:2px solid #3b82f6;padding-left:1rem;' + s + '">' + (p.items||[]).map(function(it){return '<div style="margin-bottom:1rem"><div style="font-size:.75rem;color:#999">' + resolve(it.time) + '</div><div style="color:#e2e8f0">' + resolve(it.content) + '</div></div>';}).join('') + '</div>';
-    case 'Image':
-      return '<img src="' + (p.url||'') + '" alt="' + (p.alt||'') + '" style="max-width:100%;' + (p.width?'width:'+p.width+';':'') + (p.height?'height:'+p.height+';':'') + s + '">';
-    case 'Divider':
-      return '<hr style="border:none;border-top:1px solid #333;margin:4px 0;' + s + '">';
-    case 'Chart': {
-      if (p.imageBase64)
-        return '<div style="text-align:center;padding:1rem;background:#161c26;border:1px solid #1e2733;border-radius:10px;' + s + '"><div style="font-weight:600;color:#e2e8f0;margin-bottom:.75rem">' + resolve(p.title) + '</div><img src="' + p.imageBase64 + '" style="max-width:100%;border-radius:8px"></div>';
-      var ds = p.datasets || [], dsStr = '';
-      for (var d = 0; d < ds.length; d++) dsStr += ds[d].label + ':[' + ds[d].data.join(',') + '] ';
-      return '<div style="text-align:center;padding:1.5rem;background:#161c26;border:1px solid #1e2733;border-radius:10px;' + s + '"><div style="font-weight:600;color:#e2e8f0;margin-bottom:.5rem">' + resolve(p.title) + '</div><div style="color:#999;font-size:.8rem">' + (p.labels||[]).join(',') + ' | ' + dsStr + '</div></div>';
-    }
-  }
-  return '';
-}
-
-// ============================================
-//  API
-// ============================================
-function generate() {
-  var prompt = document.getElementById('prompt').value.trim();
+window.generate = async function() {
+  const prompt = document.getElementById('prompt').value.trim();
   if (!prompt) return;
 
-  document.getElementById('spin').classList.add('active');
-  document.getElementById('btnText').textContent = 'Generating...';
-  document.getElementById('loading').classList.add('active');
-  formData = {};
-
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', '/a2ui/generate');
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  document.getElementById('status').textContent = '⏳ Generating...';
   
-  xhr.onload = function () {
-    document.getElementById('spin').classList.remove('active');
-    document.getElementById('btnText').textContent = 'Generate UI';
-    document.getElementById('loading').classList.remove('active');
-
-    if (xhr.status !== 200) {
-      document.getElementById('render').innerHTML = '<div class="empty-state"><p style="color:#ef4444">Server error: ' + xhr.status + '</p></div>';
+  try {
+    const resp = await fetch('/a2ui/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await resp.json();
+    
+    if (data.error) {
+      document.getElementById('render').innerHTML = '<p style="color:#ef4444">' + data.error + '</p>';
       return;
     }
 
-    var resp = JSON.parse(xhr.responseText);
-    if (resp.error) {
-      document.getElementById('render').innerHTML = '<div class="empty-state"><p style="color:#ef4444">' + resp.error + '</p></div>';
-      return;
-    }
-
-    var ui = resp.ui;
+    const ui = data.ui;
     document.getElementById('jsonView').textContent = JSON.stringify(ui, null, 2);
 
-    var comps = ui.surfaceUpdate.components;
-    var byId = {};
-    for (var i = 0; i < comps.length; i++) byId[comps[i].id] = comps[i].component;
+    // Standard A2UI protocol: create processor, process messages
+    const processor = Data.createSignalA2uiMessageProcessor();
+    
+    // Ensure surfaceId
+    if (!ui.surfaceUpdate.surfaceId) ui.surfaceUpdate.surfaceId = 'main';
+    
+    processor.processMessages([
+      ui,
+      { beginRendering: { surfaceId: ui.surfaceUpdate.surfaceId, root: 'root' } }
+    ]);
 
-    document.getElementById('render').innerHTML = renderComponent('root', byId);
-    document.getElementById('status').innerHTML = '<span style="color:var(--success)">●</span> Generated ' + new Date().toLocaleTimeString();
-  };
+    // Render with official component
+    const render = document.getElementById('render');
+    render.innerHTML = '';
+    const surface = document.createElement('a2ui-surface');
+    surface.setAttribute('surfaceId', ui.surfaceUpdate.surfaceId);
+    surface.processor = processor;
+    surface.surface = processor.getSurfaces().get(ui.surfaceUpdate.surfaceId);
+    render.appendChild(surface);
 
-  xhr.onerror = function () {
-    document.getElementById('spin').classList.remove('active');
-    document.getElementById('btnText').textContent = 'Generate UI';
-    document.getElementById('loading').classList.remove('active');
-    document.getElementById('render').innerHTML = '<div class="empty-state"><p style="color:#ef4444">Connection failed. Is the server running?</p></div>';
-  };
-
-  xhr.send(JSON.stringify({ prompt: prompt }));
-}
-
-// Event delegation for dynamic components
-document.addEventListener('click', function(e) {
-  var t = e.target.closest('[data-modal]');
-  if (t) { document.getElementById(t.dataset.modal).showModal(); return; }
-  t = e.target.closest('[data-close]');
-  if (t) { document.getElementById(t.dataset.close).close(); return; }
-  t = e.target.closest('[data-drawer]');
-  if (t) { document.getElementById(t.dataset.drawer).classList.toggle('open'); return; }
-  t = e.target.closest('[data-close-drawer]');
-  if (t) { document.getElementById(t.dataset.closeDrawer).classList.remove('open'); return; }
-  t = e.target.closest('[data-tab]');
-  if (t) {
-    var tid=t.dataset.tab, idx=parseInt(t.dataset.idx);
-    document.querySelectorAll('[data-tabs='+tid+']').forEach(function(d,i){d.style.display=i===idx?'block':'none'});
-    return;
+    document.getElementById('status').textContent = '✅ Generated ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    document.getElementById('render').innerHTML = '<p style="color:#ef4444">' + e.message + '</p>';
+    document.getElementById('status').textContent = '❌ Error';
   }
-  // DataGrid actions
-  t = e.target.closest('[data-dg]');
-  if (t) {
-    var gid = t.dataset.dg, d = window['_dg_' + gid];
-    if (!d) return;
-    var action = t.dataset.action;
-    if (action === 'prev') { d.page = Math.max(0, d.page - 1); dgRenderTable(gid); }
-    else if (action === 'next') { d.page = Math.min(Math.ceil(d.rows.length/d.pageSize)-1, d.page + 1); dgRenderTable(gid); }
-    else if (action === 'delete') { d.rows.splice(parseInt(t.dataset.row), 1); dgRenderTable(gid); }
-    else if (action === 'create') { d.rows.unshift(['New', 'Item']); dgRenderTable(gid); }
-    else if (t.dataset.page !== undefined) { d.page = parseInt(t.dataset.page); dgRenderTable(gid); }
-    return;
-  }
-});
-// DataGrid search
-document.addEventListener('input', function(e) {
-  var t = e.target.closest('[data-dg-search]');
-  if (t) {
-    var d = window['_dg_' + t.dataset.dgSearch];
-    if (d) { d.filter = t.value; d.page = 0; dgRenderTable(t.dataset.dgSearch); }
-  }
-});
+};
 </script>
 </body></html>
