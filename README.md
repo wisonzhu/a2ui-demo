@@ -190,3 +190,18 @@ python3 /tmp/a2ui.py "一个柱状图显示各季度销售额"
 
 - **A2UI v0.8**: `surfaceUpdate.components[]` → `beginRendering`
 - **AG-UI v0.0.57**: SSE streaming events
+
+## 与 OpenClaw Canvas 对比
+
+| | 本项目 | OpenClaw Canvas |
+|------|--------|-----------------|
+| A2UI 协议 | ✅ v0.8 surfaceUpdate+beginRendering | ✅ 同 |
+| 渲染方式 | 自建 DOM 渲染器 | WKWebView 自建渲染器 |
+| 图表支持 | ✅ matplotlib 后端渲染 PNG | ❌ 无 |
+| 交互式表单 | ✅ 输入绑定+提交回调 | ✅ 同 |
+| 大模型 | DeepSeek | Claude/OpenAI |
+| 模型切换 | ✅ Settings 面板 | ❌ 锁厂商 |
+| 部署 | Web + 桌面(Tauri) | macOS 桌面 |
+| 平台 | macOS/Windows/Linux | 仅 macOS |
+
+**核心差异**：OpenClaw Canvas 是 Agent 工具链的一部分（`canvas a2ui push`），需要配合 OpenClaw 网关使用。本项目是独立框架，直接调 DeepSeek API，Web + 桌面都可运行。
