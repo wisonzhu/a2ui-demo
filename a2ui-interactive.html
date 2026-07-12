@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>A2UI Interactive</title>
+<style>
+body{font-family:system-ui;background:#0d1117;color:#c9d1d9;margin:0;display:flex;height:100vh}
+.left{width:380px;padding:1rem;border-right:1px solid #30363d}
+.right{flex:1;padding:1rem;overflow-y:auto}
+h2{color:#58a6ff;margin:0 0 .5rem;font-size:1rem}
+textarea{width:100%;height:60px;background:#161b22;color:#eee;border:1px solid #30363d;border-radius:6px;padding:.5rem;resize:vertical;font-size:.9rem}
+button{padding:.4rem 1rem;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.9rem;margin-top:.5rem}
+button:hover{background:#2ea043}
+label{display:block;margin:.4rem 0 .1rem;font-size:.8rem;color:#8b949e}
+input,select{width:100%;padding:.4rem;background:#0d1117;color:#eee;border:1px solid #30363d;border-radius:4px;margin-bottom:.3rem}
+.r-table{width:100%;border-collapse:collapse;margin:.5rem 0}
+.r-table th{background:#1f6feb;color:#fff;padding:.4rem;text-align:left;font-size:.8rem}
+.r-table td{padding:.4rem;border-bottom:1px solid #30363d;font-size:.8rem}
+.r-table tr:nth-child(even) td{background:#1a1a2e}
+dialog{background:#161b22;color:#eee;border:1px solid #58a6ff;border-radius:12px;padding:1.5rem;max-width:400px}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+pre{font-size:.7rem;overflow:auto;max-height:200px;background:#0d1117;border-radius:6px;padding:.5rem}
+.spin{display:none;color:#d29922;font-size:.8rem}.spin.on{display:block}
+.chart-box{text-align:center;padding:1rem;background:#0d1117;border:1px solid #30363d;border-radius:8px;margin:.5rem 0}
+.chart-box strong{color:#58a6ff}
+</style></head>
+<body>
+<div class="left">
+  <h2>A2UI Interactive</h2>
+  <textarea id="prompt">一个用户注册表单，包含姓名、邮箱、手机号</textarea>
+  <button id="genBtn">Generate UI</button>
+  <div class="spin" id="spin">Generating...</div>
+  <details style="margin-top:.5rem"><summary style="color:#8b949e;cursor:pointer">JSON</summary><pre id="jsonView"></pre></details>
+</div>
+<div class="right" id="render"><p style="color:#8b949e">Click Generate UI</p></div>
+
+<script>
+var formData = {};
+
+function resolveValue(v) {
+  if (!v) return '';
+  if (v.literalString !== undefined) return v.literalString;
+  if (v.path) return formData[v.path.replace(/\//g, '')] || '';
+  return '';
+}
+
+function renderComponent(cid, byId) {
+  var comp = byId[cid];
+  if (!comp) return '';
+  var keys = Object.keys(comp);
+  if (keys.length === 0) return '';
+  var type = keys[0];
+  var props = comp[type];
+
+  switch (type) {
+    case 'Text':
+      var tag = props.usageHint || 'span';
+      return '<' + tag + '>' + resolveValue(props.text) + '</' + tag + '>';
+
+    case 'TextField':
+      var key = (props.text && props.text.path || '').replace(/\//g, '');
+      return '<label>' + resolveValue(props.label) + '</label><input id="fd_' + key + '" oninput="formData.' + key + '=this.value">';
+
+    case 'Button':
+      return '<button onclick="handleSubmit()">' + (props.child ? renderComponent(props.child, byId) : 'Submit') + '</button>';
+
+    case 'Column':
+      var kids = props.children && props.children.explicitList || [];
+      var inner = '';
+      for (var i = 0; i < kids.length; i++) inner += renderComponent(kids[i], byId);
+      return '<div style="display:flex;flex-direction:column;gap:8px">' + inner + '</div>';
+
+    case 'Row':
+      var kids = props.children && props.children.explicitList || [];
+      var inner = '';
+      for (var i = 0; i < kids.length; i++) inner += renderComponent(kids[i], byId);
+      return '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + inner + '</div>';
+
+    case 'Card':
+      var kids = props.children && props.children.explicitList || [];
+      var inner = '';
+      for (var i = 0; i < kids.length; i++) inner += renderComponent(kids[i], byId);
+      return '<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:.75rem;margin:.5rem 0">' + inner + '</div>';
+
+    case 'MultipleChoice':
+      var key = (props.selections && props.selections.path || '').replace(/\//g, '');
+      var opts = props.options || [];
+      var sel = '<label>' + resolveValue(props.label) + '</label><select id="fd_' + key + '" onchange="formData.' + key + '=this.value"><option value="">Select</option>';
+      for (var j = 0; j < opts.length; j++)
+        sel += '<option value="' + resolveValue(opts[j].value) + '">' + resolveValue(opts[j].label) + '</option>';
+      return sel + '</select>';
+
+    case 'Checkbox':
+      return '<label><input type="checkbox" style="width:auto"> ' + resolveValue(props.label) + '</label>';
+
+    case 'Slider':
+      return '<label>' + resolveValue(props.label) + ' <input type="range" min="' + (props.min || 0) + '" max="' + (props.max || 100) + '" value="' + (props.value || 50) + '" style="width:100%"></label>';
+
+    case 'Divider':
+      return '<hr style="border-color:#30363d;margin:8px 0">';
+
+    case 'Table':
+      var h = '<table class="r-table"><thead><tr>';
+      var cols = props.columns || [];
+      for (var c = 0; c < cols.length; c++) h += '<th>' + resolveValue(cols[c]) + '</th>';
+      h += '</tr></thead><tbody>';
+      var rows = props.rows || [];
+      for (var r = 0; r < rows.length; r++) {
+        h += '<tr>';
+        for (var cell = 0; cell < rows[r].length; cell++) h += '<td>' + resolveValue(rows[r][cell]) + '</td>';
+        h += '</tr>';
+      }
+      return h + '</tbody></table>';
+
+    case 'Modal':
+      var mid = 'mdl' + Math.random().toString(36).slice(2, 8);
+      return '<button style="background:#0f3460;padding:.3rem .75rem;border-radius:4px;border:none;color:#eee;cursor:pointer" onclick="document.getElementById(\'' + mid + '\').showModal()">' + (resolveValue(props.triggerText) || 'Open') + '</button><dialog id="' + mid + '"><h3>' + resolveValue(props.title) + '</h3>' + (props.content ? renderModalContent(props.content, byId) : '') + '<br><button onclick="document.getElementById(\'' + mid + '\').close()" style="margin-top:1rem">Close</button></dialog>';
+
+    case 'Tabs':
+      var tid = 'tab' + Math.random().toString(36).slice(2, 6);
+      var tabs = props.tabs || [];
+      var contents = props.contents || [];
+      var bar = '<div style="display:flex;gap:4px;margin:.5rem 0">';
+      for (var t = 0; t < tabs.length; t++) {
+        bar += '<button style="background:#0f3460;padding:.25rem .75rem;border:none;border-radius:4px;color:#eee;cursor:pointer;font-size:.8rem" onclick="(function(){var ds=document.querySelectorAll(\\\'[data-tabs=' + tid + ']\\\');for(var j=0;j<ds.length;j++)ds[j].style.display=j===' + t + '?\\\'block\\\':\\\'none\\\'})()">' + resolveValue(tabs[t]) + '</button>';
+      }
+      bar += '</div><div>';
+      for (var c = 0; c < contents.length; c++) {
+        bar += '<div data-tabs="' + tid + '" style="display:' + (c === 0 ? 'block' : 'none') + '">' + renderModalContent(contents[c], byId) + '</div>';
+      }
+      return bar + '</div>';
+
+    case 'Chart':
+      if (props.imageBase64) {
+        return '<div class="chart-box"><strong>' + resolveValue(props.title) + '</strong><br><img src="' + props.imageBase64 + '" style="max-width:100%;border-radius:8px;border:1px solid #30363d;margin-top:.5rem"></div>';
+      }
+      var labels = props.labels || [];
+      var datasets = props.datasets || [];
+      var dsStr = '';
+      for (var d = 0; d < datasets.length; d++)
+        dsStr += datasets[d].label + ':[' + datasets[d].data.join(',') + '] ';
+      return '<div class="chart-box"><strong>' + resolveValue(props.title) + '</strong><p style="color:#8b949e;font-size:.8rem;margin:.5rem 0">' + labels.join(',') + ' | ' + dsStr + '</p></div>';
+
+    default:
+      return '';
+  }
+}
+
+function renderModalContent(obj, byId) {
+  var kids = obj && obj.explicitList || [];
+  var h = '<div style="display:flex;flex-direction:column;gap:8px">';
+  for (var i = 0; i < kids.length; i++) h += renderComponent(kids[i], byId);
+  return h + '</div>';
+}
+
+function handleSubmit() {
+  var parts = [];
+  for (var k in formData) {
+    if (formData[k]) parts.push(k + '=' + formData[k]);
+  }
+  var target = document.getElementById('render');
+  target.innerHTML += '<p style="color:#3fb950;margin-top:.5rem">Submitted: ' + parts.join(', ') + '</p>';
+}
+
+document.getElementById('genBtn').onclick = function () {
+  var promptText = document.getElementById('prompt').value.trim();
+  if (!promptText) return;
+
+  document.getElementById('spin').className = 'spin on';
+  formData = {};
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/a2ui/generate');
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function () {
+    document.getElementById('spin').className = 'spin';
+    if (xhr.status !== 200) return;
+    var resp = JSON.parse(xhr.responseText);
+    if (resp.error) {
+      document.getElementById('render').innerHTML = '<p style="color:#f85149">Error: ' + resp.error + '</p>';
+      return;
+    }
+
+    var ui = resp.ui;
+    document.getElementById('jsonView').textContent = JSON.stringify(ui, null, 2);
+
+    var comps = ui.surfaceUpdate.components;
+    var byId = {};
+    for (var i = 0; i < comps.length; i++) byId[comps[i].id] = comps[i].component;
+
+    document.getElementById('render').innerHTML = renderComponent('root', byId);
+  };
+  xhr.send(JSON.stringify({ prompt: promptText }));
+};
+</script>
+</body></html>

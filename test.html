@@ -1,0 +1,19 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Test</title></head>
+<body style="background:#111;color:#eee;font-family:system-ui;padding:2rem">
+<h2>A2UI Test</h2>
+<textarea id="p" style="width:300px;height:60px">一个注册表单</textarea>
+<button id="b">Generate</button>
+<pre id="r"></pre>
+<script>
+document.getElementById('b').onclick=async()=>{
+  var t=document.getElementById('p').value;
+  var x=new XMLHttpRequest();
+  x.open('POST','http://localhost:3456/a2ui/generate');
+  x.setRequestHeader('Content-Type','application/json');
+  x.onload=function(){
+    document.getElementById('r').textContent=JSON.stringify(JSON.parse(x.responseText),null,2).substring(0,2000);
+  };
+  x.send(JSON.stringify({prompt:t}));
+};
+</script>
+</body></html>

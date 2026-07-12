@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>A2UI App</title>
+<style>
+*{box-sizing:border-box}body{font-family:system-ui;background:#0d1117;color:#c9d1d9;margin:0;height:100vh;display:flex}
+.sidebar{width:300px;background:#161b22;border-right:1px solid #30363d;display:flex;flex-direction:column}
+.sidebar h3{padding:1rem;margin:0;color:#58a6ff;border-bottom:1px solid #30363d}
+.tab{display:flex;border-bottom:1px solid #30363d}
+.tab button{flex:1;padding:.5rem;background:0;color:#8b949e;border:none;cursor:pointer;font-size:.85rem}
+.tab button.active{color:#58a6ff;border-bottom:2px solid #58a6ff}
+.panel{flex:1;overflow-y:auto;padding:1rem}
+.panel label{display:block;font-size:.8rem;color:#8b949e;margin:.5rem 0 .2rem}
+.panel input,.panel textarea,.panel select{width:100%;padding:.4rem;background:#0d1117;color:#eee;border:1px solid #30363d;border-radius:4px;font-size:.85rem}
+.panel textarea{height:60px;resize:vertical}
+.panel button{padding:.4rem 1rem;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-top:.5rem}
+.panel button:hover{background:#2ea043}
+.main{flex:1;display:flex;flex-direction:column}
+.main .toolbar{padding:.5rem 1rem;background:#161b22;border-bottom:1px solid #30363d;display:flex;gap:.5rem;align-items:center}
+.main .toolbar select{background:#0d1117;color:#eee;border:1px solid #30363d;border-radius:4px;padding:.3rem;font-size:.8rem}
+.content{flex:1;padding:1rem;overflow-y:auto}
+.render label{display:block;margin:.4rem 0 .1rem;font-size:.8rem;color:#8b949e}
+.render input,.render select{width:100%;padding:.4rem;background:#0d1117;color:#eee;border:1px solid #30363d;border-radius:4px;margin-bottom:.3rem}
+.render button{padding:.4rem 1rem;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer}
+.render table{width:100%;border-collapse:collapse;margin:.5rem 0}
+.render th{background:#1f6feb;color:#fff;padding:.4rem;text-align:left;font-size:.8rem}
+.render td{padding:.4rem;border-bottom:1px solid #30363d;font-size:.8rem}
+.render tr:nth-child(even) td{background:#1a1a2e}
+.render dialog{background:#161b22;color:#eee;border:1px solid #58a6ff;border-radius:12px;padding:1.5rem;max-width:400px}
+.render dialog::backdrop{background:rgba(0,0,0,.6)}
+pre{font-size:.7rem;overflow:auto;max-height:200px;background:#0d1117;border-radius:6px;padding:.5rem}
+.spin{display:none;color:#d29922;font-size:.8rem}.spin.on{display:block}
+.quick-prompts{display:flex;flex-wrap:wrap;gap:.25rem;margin:.5rem 0}
+.quick-prompts button{font-size:.75rem;padding:.25rem .5rem;background:#0f3460;margin:0}
+</style></head><body>
+<div class="sidebar">
+<h3>A2UI App</h3>
+<div class="tab">
+<button class="active" onclick="switchTab('generate')">Generate</button>
+<button onclick="switchTab('settings')">Settings</button>
+</div>
+<div id="genPanel" class="panel">
+<textarea id="prompt" style="height:80px">一个用户注册表单，包含姓名、邮箱、手机号</textarea>
+<div class="quick-prompts">
+<button onclick="setPrompt('柱状图 季度销售额 Q1=100 Q2=200')">柱状图</button>
+<button onclick="setPrompt('饼图 各部门预算')">饼图</button>
+<button onclick="setPrompt('折线图 每月访问量')">折线图</button>
+<button onclick="setPrompt('用户数据表格 姓名年龄城市')">表格</button>
+<button onclick="setPrompt('带弹窗的确认对话框')">弹窗</button>
+<button onclick="setPrompt('标签页设置面板')">标签页</button>
+</div>
+<button onclick="generate()">Generate UI</button>
+<div class="spin" id="spin">Generating...</div>
+<details style="margin-top:.5rem"><summary style="color:#8b949e;cursor:pointer">JSON</summary><pre id="jsonView"></pre></details>
+</div>
+<div id="settingsPanel" class="panel" style="display:none">
+<label>API Provider</label>
+<select id="cfgProvider" onchange="saveConfig()">
+<option value="deepseek">DeepSeek</option>
+<option value="openai">OpenAI Compatible</option>
+</select>
+<label>API Endpoint</label>
+<input id="cfgEndpoint" placeholder="https://api.deepseek.com/v1" onchange="saveConfig()">
+<label>API Key (stored locally)</label>
+<input id="cfgKey" type="password" placeholder="sk-..." onchange="saveConfig()">
+<label>Model Name</label>
+<input id="cfgModel" placeholder="deepseek-chat" onchange="saveConfig()">
+<button onclick="saveConfig()">Save Settings</button>
+<p style="font-size:.75rem;color:#8b949e;margin-top:1rem">Settings saved in browser localStorage</p>
+</div>
+</div>
+<div class="main">
+<div class="toolbar">
+<select id="presetSelect" onchange="loadPreset()">
+<option value="deepseek-chat">DeepSeek Chat</option>
+<option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
+<option value="gpt-4o">GPT-4o</option>
+<option value="gpt-4o-mini">GPT-4o Mini</option>
+</select>
+<span style="font-size:.8rem;color:#8b949e" id="modelInfo"></span>
+</div>
+<div class="content render" id="render"><p style="color:#8b949e">Enter a prompt and click Generate UI</p></div>
+</div>
+<script>
+var formData = {};
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab button').forEach(function(b,i) {
+    b.className = (i===0 && tab==='generate') || (i===1 && tab==='settings') ? 'active' : '';
+  });
+  document.getElementById('genPanel').style.display = tab === 'generate' ? 'block' : 'none';
+  document.getElementById('settingsPanel').style.display = tab === 'settings' ? 'block' : 'none';
+}
+
+function setPrompt(text) { document.getElementById('prompt').value = text; }
+
+function loadConfig() {
+  try { return JSON.parse(localStorage.getItem('a2ui_config') || '{}'); } catch { return {}; }
+}
+
+function saveConfig() {
+  var cfg = {
+    provider: document.getElementById('cfgProvider').value,
+    endpoint: document.getElementById('cfgEndpoint').value,
+    key: document.getElementById('cfgKey').value,
+    model: document.getElementById('cfgModel').value
+  };
+  localStorage.setItem('a2ui_config', JSON.stringify(cfg));
+  updateModelInfo();
+}
+
+function updateModelInfo() {
+  var cfg = loadConfig();
+  var model = cfg.model || document.getElementById('presetSelect').value;
+  document.getElementById('modelInfo').textContent = 'Model: ' + model;
+}
+
+function loadPreset() {
+  var model = document.getElementById('presetSelect').value;
+  document.getElementById('cfgModel').value = model;
+  if (model.startsWith('gpt')) {
+    document.getElementById('cfgProvider').value = 'openai';
+    document.getElementById('cfgEndpoint').value = 'https://api.openai.com/v1';
+  } else {
+    document.getElementById('cfgProvider').value = 'deepseek';
+    document.getElementById('cfgEndpoint').value = 'https://api.deepseek.com/v1';
+  }
+  saveConfig();
+}
+
+// Init settings
+var cfg = loadConfig();
+if (!cfg.model) {
+  cfg = { provider: 'deepseek', endpoint: 'https://api.deepseek.com/v1', model: 'deepseek-chat', key: '' };
+  localStorage.setItem('a2ui_config', JSON.stringify(cfg));
+}
+document.getElementById('cfgProvider').value = cfg.provider || 'deepseek';
+document.getElementById('cfgEndpoint').value = cfg.endpoint || 'https://api.deepseek.com/v1';
+document.getElementById('cfgKey').value = cfg.key || '';
+document.getElementById('cfgModel').value = cfg.model || 'deepseek-chat';
+document.getElementById('presetSelect').value = cfg.model || 'deepseek-chat';
+updateModelInfo();
+
+function resolveValue(v) {
+  if (!v) return '';
+  if (v.literalString !== undefined) return v.literalString;
+  if (v.path) return formData[v.path.replace(/\//g, '')] || '';
+  return '';
+}
+
+function renderComponent(cid, byId) {
+  var comp = byId[cid]; if (!comp) return '';
+  var type = Object.keys(comp)[0]; var props = comp[type];
+  switch (type) {
+    case 'Text': return '<' + (props.usageHint || 'span') + '>' + resolveValue(props.text) + '</' + (props.usageHint || 'span') + '>';
+    case 'TextField': var k = (props.text && props.text.path || '').replace(/\//g, ''); return '<label>' + resolveValue(props.label) + '</label><input oninput="formData.' + k + '=this.value">';
+    case 'Button': return '<button onclick="handleSubmit()">' + (props.child ? renderComponent(props.child, byId) : 'Submit') + '</button>';
+    case 'Column': case 'Row': case 'Card':
+      var kids = props.children && props.children.explicitList || [];
+      var inner = ''; for (var i = 0; i < kids.length; i++) inner += renderComponent(kids[i], byId);
+      var style = type === 'Column' ? 'display:flex;flex-direction:column;gap:8px' : type === 'Row' ? 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' : 'background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:.75rem;margin:.5rem 0';
+      return '<div style="' + style + '">' + inner + '</div>';
+    case 'MultipleChoice': var k = (props.selections && props.selections.path || '').replace(/\//g, ''); var o = '<label>' + resolveValue(props.label) + '</label><select onchange="formData.' + k + '=this.value"><option value="">Select</option>'; for (var j = 0; j < (props.options || []).length; j++) o += '<option value="' + resolveValue(props.options[j].value) + '">' + resolveValue(props.options[j].label) + '</option>'; return o + '</select>';
+    case 'Table': var h = '<table><thead><tr>'; var cols = props.columns || []; for (var c = 0; c < cols.length; c++) h += '<th>' + resolveValue(cols[c]) + '</th>'; h += '</tr></thead><tbody>'; var rows = props.rows || []; for (var r = 0; r < rows.length; r++) { h += '<tr>'; for (var cell = 0; cell < rows[r].length; cell++) h += '<td>' + resolveValue(rows[r][cell]) + '</td>'; h += '</tr>'; } return h + '</tbody></table>';
+    case 'Modal': var mid = 'mdl' + Math.random().toString(36).slice(2, 8); return '<button style="background:#0f3460;padding:.3rem .75rem;border-radius:4px;border:none;color:#eee;cursor:pointer" onclick="document.getElementById(\'' + mid + '\').showModal()">' + (resolveValue(props.triggerText) || 'Open') + '</button><dialog id="' + mid + '"><h3>' + resolveValue(props.title) + '</h3>' + (props.content ? renderModalContent(props.content, byId) : '') + '<br><button onclick="document.getElementById(\'' + mid + '\').close()">Close</button></dialog>';
+    case 'Tabs': var tid = 'tab' + Math.random().toString(36).slice(2, 6); var tabs = props.tabs || []; var contents = props.contents || []; var bar = '<div style="display:flex;gap:4px;margin:.5rem 0">'; for (var t = 0; t < tabs.length; t++) bar += '<button style="background:#0f3460;padding:.25rem .75rem;border:none;border-radius:4px;color:#eee;cursor:pointer;font-size:.8rem" onclick="(function(){var ds=document.querySelectorAll(\\\'[data-tabs=' + tid + ']\\\');for(var j=0;j<ds.length;j++)ds[j].style.display=j===' + t + '?\\\'block\\\':\\\'none\\\'})()">' + resolveValue(tabs[t]) + '</button>'; bar += '</div><div>'; for (var c = 0; c < contents.length; c++) bar += '<div data-tabs="' + tid + '" style="display:' + (c === 0 ? 'block' : 'none') + '">' + renderModalContent(contents[c], byId) + '</div>'; return bar + '</div>';
+    case 'Chart': if (props.imageBase64) return '<div style="text-align:center;padding:1rem;margin:.5rem 0;background:#0d1117;border:1px solid #30363d;border-radius:8px"><strong style="color:#58a6ff;display:block;margin-bottom:.5rem">' + resolveValue(props.title) + '</strong><img src="' + props.imageBase64 + '" style="max-width:100%;border-radius:8px"></div>'; var ds = props.datasets || []; var dsStr = ''; for (var d = 0; d < ds.length; d++) dsStr += ds[d].label + ':[' + ds[d].data.join(',') + '] '; return '<div style="text-align:center;padding:1rem;background:#0d1117;border:1px solid #30363d;border-radius:8px;margin:.5rem 0"><strong style="color:#58a6ff">' + resolveValue(props.title) + '</strong><p style="color:#8b949e;font-size:.8rem">' + (props.labels || []).join(',') + ' | ' + dsStr + '</p></div>';
+    default: return '';
+  }
+}
+
+function renderModalContent(obj, byId) {
+  var kids = obj && obj.explicitList || [];
+  var h = '<div style="display:flex;flex-direction:column;gap:8px">';
+  for (var i = 0; i < kids.length; i++) h += renderComponent(kids[i], byId);
+  return h + '</div>';
+}
+
+function handleSubmit() {
+  var p = []; for (var k in formData) if (formData[k]) p.push(k + '=' + formData[k]);
+  document.getElementById('render').innerHTML += '<p style="color:#3fb950;margin-top:.5rem">Submitted: ' + p.join(', ') + '</p>';
+}
+
+function generate() {
+  var prompt = document.getElementById('prompt').value.trim();
+  if (!prompt) return;
+  document.getElementById('spin').className = 'spin on';
+  formData = {};
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/a2ui/generate');
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function () {
+    document.getElementById('spin').className = 'spin';
+    if (xhr.status !== 200) return;
+    var resp = JSON.parse(xhr.responseText);
+    if (resp.error) { document.getElementById('render').innerHTML = '<p style="color:#f85149">' + resp.error + '</p>'; return; }
+    var ui = resp.ui;
+    document.getElementById('jsonView').textContent = JSON.stringify(ui, null, 2);
+    var comps = ui.surfaceUpdate.components;
+    var byId = {}; for (var i = 0; i < comps.length; i++) byId[comps[i].id] = comps[i].component;
+    document.getElementById('render').innerHTML = renderComponent('root', byId);
+  };
+  xhr.send(JSON.stringify({ prompt: prompt }));
+}
+</script>
+</body></html>
