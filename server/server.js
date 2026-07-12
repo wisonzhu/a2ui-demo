@@ -216,6 +216,27 @@ const server = http.createServer(async (req, res) => {
         const ui = await a2uiGen(prompt);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, ui }));
+      } catch (e) { res.end(JSON.stringify({ success: false, error: e.message })); }
+    });
+    return;
+  }
+
+  if (url.pathname === '/a2ui/generate-renderer' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { prompt } = JSON.parse(body);
+        const system = 'You are a JavaScript code generator. Output ONLY the function body code for rendering an A2UI component. The function receives props object "p" and must return an HTML string. Use the rv(p.propname) helper to extract text values. Return ONLY valid JS code, no markdown, no explanation, no function wrapper.';
+        const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + DEEPSEEK_KEY },
+          body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }], max_tokens: 1000 })
+        });
+        const data = await resp.json();
+        const code = (data.choices?.[0]?.message?.content || '').replace(/```javascript|```js|```/g, '').trim();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ code }));
       } catch (e) {
         res.writeHead(500);
         res.end(JSON.stringify({ error: e.message }));
