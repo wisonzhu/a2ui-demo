@@ -127,39 +127,100 @@ Redis集群: 3节点,内存使用 45%/52%/38% ✅正常
 MySQL: 连接数156/500 QPS 2340 慢查询3条 ✅正常`;
   }
   
-  // Dashboard: comprehensive monitoring overview
   if (source === 'dashboard') {
     const memTotal = os.totalmem()/1024/1024/1024;
     const memFree = os.freemem()/1024/1024/1024;
     const cpuUse = parseFloat(execSync("top -l 1 -n 0 | grep 'CPU usage' | awk '{print $3}' | sed 's/%//'", {encoding:'utf8'}).trim()) || Math.floor(Math.random()*20+30);
     const memUse = ((memTotal-memFree)/memTotal*100).toFixed(0);
     const diskUse = execSync("df -h / | tail -1 | awk '{print $5}' | sed 's/%//'", {encoding:'utf8'}).trim();
-    const load = os.loadavg()[0].toFixed(1);
+    const load = os.loadavg();
     const days = Math.floor(os.uptime()/86400);
+    const hours = Math.floor((os.uptime()%86400)/3600);
     const procs = execSync("ps aux | wc -l", {encoding:'utf8'}).trim();
     const net = execSync("ifconfig en0 | grep 'inet ' | awk '{print $2}'", {encoding:'utf8'}).trim();
-    const top5 = execSync("ps aux -r | head -6 | tail -5 | awk '{printf \"%s %.1fCPU %.1fMEM %s\\n\",$11,$3,$4,$2}'", {encoding:'utf8'}).trim();
-    const conns = execSync("netstat -an | grep ESTABLISHED | wc -l", {encoding:'utf8'}).trim();
-    const openFiles = execSync("lsof | wc -l", {encoding:'utf8'}).trim();
-    return `全域监控大盘数据:
-系统: 主机名 ${execSync("hostname", {encoding:'utf8'}).trim()}, IP ${net}, OS ${os.release()}, 运行${days}天, 负载${load}
-资源: CPU ${cpuUse}%, 内存总量${memTotal.toFixed(1)}G 已用${memUse}% 可用${memFree.toFixed(1)}G, 磁盘使用率${diskUse}%
-进程: 总数${procs}, 连接数${conns}, 打开文件${openFiles}
-Top5进程(CPU MEM PID):
-${top5}
-24小时趋势:
-CPU趋势: 08:00=42% 10:00=58% 12:00=76% 14:00=${cpuUse}% 16:00=63% 18:00=48%
-内存趋势: 08:00=51% 10:00=55% 12:00=62% 14:00=${memUse}% 16:00=59% 18:00=53%
-网络流量: 入站1.2TB 出站856GB 峰值时段14:00-16:00 当前连接数${conns}
-服务健康: MySQL连接156/500 QPS 2340 慢查询3 ✅ | Redis命中率97.5% 内存2.1G/4G keys45万 ✅ | Nginx请求量12.3万/天 错误率0.3% P99延迟220ms ✅
-最近告警(5条): 
-- 严重: CPU使用率飙升至92% web-02节点 10分钟前
-- 严重: 磁盘空间不足 /data分区 使用率87% 30分钟前  
-- 警告: 内存使用率持续>85% cache-01节点 1小时前
-- 警告: 连接池耗尽 db-slave 最大连接数500已达488 2小时前
-- 信息: 自动扩容完成 web-tier 从3节点扩至5节点 3小时前
-今日事件: 部署v3.2.1到生产(成功) | 自动扩容web-tier(完成) | 证书更新(完成) | 备份完成(成功)
-SLA: API可用率99.97% 本月宕机时间累计2.3分钟 P99延迟218ms 目标<500ms ✅`;
+    const top10 = execSync("ps aux -r | head -11 | tail -10 | awk '{printf \"%s|%.1f|%.1f|%s|%s\\n\",$11,$3,$4,$2,substr($0,index($0,$11)+length($11)+1,30)}'", {encoding:'utf8'}).trim();
+    const conns = execSync("netstat -an 2>/dev/null | grep -c ESTABLISHED || echo 0", {encoding:'utf8'}).trim();
+    const hostname = execSync("hostname", {encoding:'utf8'}).trim();
+    // Disk details
+    const diskDetail = execSync("df -h | tail -n +2 | awk '{printf \"%s|%s|%s|%s|%s\\n\",$1,$2,$3,$4,$5}'", {encoding:'utf8'}).trim();
+    // Mock service data
+    return `====== 全域监控平台 - 实时数据 ======
+
+【系统概览】
+主机名: ${hostname}
+IP地址: ${net}
+操作系统: macOS ${os.release()}
+运行时间: ${days}天${hours}小时
+系统负载: 1min=${load[0].toFixed(1)} 5min=${load[1].toFixed(1)} 15min=${load[2].toFixed(1)}
+CPU使用率: ${cpuUse}% (用户态${Math.floor(cpuUse*0.7)}% 系统态${Math.floor(cpuUse*0.3)}%)
+内存: 总量${memTotal.toFixed(1)}G 已用${memUse}%(${(memTotal-memFree).toFixed(1)}G) 可用${memFree.toFixed(1)}G 缓存${(memFree*0.3).toFixed(1)}G
+进程总数: ${procs} (运行中${Math.floor(procs*0.6)} 睡眠${Math.floor(procs*0.35)} 僵尸${Math.floor(procs*0.05)})
+网络连接数: ESTABLISHED=${conns} TIME_WAIT=${Math.floor(conns*0.4)} CLOSE_WAIT=${Math.floor(conns*0.1)}
+打开文件数: ${execSync("lsof 2>/dev/null | wc -l || echo 0", {encoding:'utf8'}).trim()}
+
+【磁盘详情】
+分区|总量|已用|可用|使用率
+${diskDetail}
+
+【TOP10进程 - CPU消耗】
+进程名|CPU%|MEM%|PID|启动参数
+${top10}
+
+【24小时性能趋势 - 用于Chart柱状图/折线图】
+CPU使用率趋势(%): 00:00=35 02:00=28 04:00=22 06:00=25 08:00=45 10:00=62 12:00=78 14:00=${cpuUse} 16:00=58 18:00=48 20:00=42 22:00=38
+内存使用率趋势(%): 00:00=48 02:00=46 04:00=44 06:00=47 08:00=55 10:00=60 12:00=68 14:00=${memUse} 16:00=62 18:00=56 20:00=52 22:00=50
+网络吞吐趋势(Mbps): 00:00=120 02:00=80 04:00=45 06:00=90 08:00=320 10:00=480 12:00=620 14:00=560 16:00=490 18:00=380 20:00=280 22:00=180
+磁盘IO趋势(iops): 00:00=200 02:00=150 04:00=100 06:00=180 08:00=450 10:00=600 12:00=720 14:00=680 16:00=550 18:00=400 20:00=300 22:00=220
+连接数趋势: 00:00=850 02:00=600 04:00=400 06:00=750 08:00=1500 10:00=2200 12:00=2800 14:00=${conns} 16:00=2400 18:00=1800 20:00=1400 22:00=1000
+
+【服务健康状态 - 用于服务监控面板】
+MySQL主库(db-master): 状态✅ 连接数156/500 QPS 2340 慢查询3条/小时 复制延迟0.2s 运行时间30天
+MySQL从库(db-slave-1): 状态✅ 连接数89/300 QPS 1120 慢查询1条/小时 复制延迟0.1s 运行时间30天  
+MySQL从库(db-slave-2): 状态⚠️ 连接数142/300 QPS 980 慢查询8条/小时 复制延迟2.3s 运行时间15天
+Redis集群(3节点): 状态✅ 总内存使用5.8G/12G 命中率97.5% 总key数145万 连接数2340 慢查询0
+Elasticsearch集群(3节点): 状态✅ 文档数8.5亿 存储3.2TB 查询QPS 450 平均延迟12ms 节点状态全部green
+Nginx(web-01): 状态✅ 今日请求12.3万 错误率0.32% P50延迟35ms P99延迟220ms 活跃连接850
+Nginx(web-02): 状态⚠️ 今日请求10.8万 错误率0.45% P50延迟42ms P99延迟310ms 活跃连接720
+Kafka集群(3节点): 状态✅ 消息堆积0 每秒入站3.2万条 出站2.8万条 消费者lag<100
+RabbitMQ: 状态✅ 队列总数45个 消息速率1200/s 连接数560 Ready消息3200条
+
+【告警中心 - 最近7天】
+严重(P0):
+- CPU使用率飙升至92%，影响web-02节点 2小时前 处理中 负责人:张三
+- 磁盘/data分区使用率87%，db-master服务器 1天前 已恢复 自动清理完成
+- API网关5xx错误率突增至2.1%，影响全部用户 3天前 已恢复 上游服务超时已修复
+警告(P1):
+- 内存使用率持续>85%，cache-01节点 1小时前 未处理
+- 连接池耗尽db-slave-2，最大500已达488 30分钟前 处理中
+- SSL证书7天后过期，域名*.example.com 6小时前 未处理
+- 数据备份延迟45分钟，备份任务#3421 1天前 处理中
+信息(P2):
+- 自动扩容完成 web-tier 3→5节点 6小时前 已完成
+- 计划维护窗口确认 明晨02:00-04:00 12小时前 待执行
+- 安全扫描完成 发现3个低危漏洞 1天前 待修复
+- 资源使用预测 未来7天需要扩容2台web节点
+
+【部署记录 - Timeline/Steps组件】
+v3.2.2: 灰度发布中(10%流量) 1小时前 发布人:李四
+v3.2.1: 生产环境全量部署 成功 1天前 耗时8分钟 发布人:王五
+v3.2.0: 预发布环境验证通过 成功 2天前 耗时5分钟 自动触发
+v3.1.9: 生产环境回滚(紧急) 因5xx错误率过高 3天前 回滚到v3.1.8
+v3.1.8: 生产环境部署 成功 4天前 耗时12分钟
+
+【资源容量规划】
+CPU: 当前${cpuUse}% | 7天峰值92% | 30天平均65% | 建议:正常
+内存: 当前${memUse}% | 7天峰值89% | 30天平均72% | 建议:考虑扩容
+磁盘: 当前${diskUse}% | 7天预测可达90% | 建议:清理或扩容
+网络带宽: 峰值使用62% | 趋势平稳 | 建议:正常
+
+【SLA 统计 - 本月】
+API可用率: 99.97% (目标99.9% ✅)
+P50延迟: 35ms (目标<100ms ✅)
+P99延迟: 218ms (目标<500ms ✅)
+错误率: 0.12% (目标<0.5% ✅)
+本月宕机: 累计2.3分钟
+MTTR(平均恢复): 3.8分钟
+MTBF(平均故障间隔): 720小时`;
   }
   
   return `Unknown data source: ${source}`;
@@ -206,7 +267,7 @@ Every component MUST have "id" and "component" fields. Output ONLY valid JSON, n
     body: JSON.stringify({
       model: 'deepseek-chat',
       messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
-      temperature: 0.7, max_tokens: 16000
+      temperature: 0.7, max_tokens: 32000
     })
   }).catch(e => {
     console.error('DeepSeek fetch error:', e.message);
