@@ -1,2 +1,8 @@
-node_modules/\n.tmp/\n.DS_Store
+node_modules/
+.tmp/
+.DS_Store
+.env
+.env.local
 **/target/
+*.pem
+*.key
