@@ -285,6 +285,20 @@ body {
 
 .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
 
+/* Drawer */
+.a2ui-drawer {
+  position: fixed; top: 0;
+  width: 340px; height: 100%;
+  background: #12171f;
+  box-shadow: 0 0 30px rgba(0,0,0,.6);
+  z-index: 999;
+  transition: transform .3s ease;
+  padding: 1.5rem;
+  overflow-y: auto;
+  color: #b8c5d6;
+}
+.a2ui-drawer.open { transform: translateX(0) !important; }
+
 /* Config panel */
 .config-section {
   border-top: 1px solid var(--border);
@@ -630,11 +644,11 @@ function renderComponent(id, byId) {
     case 'Drawer': {
       var did = 'drw' + Math.random().toString(36).slice(2,6);
       var pos = p.placement === 'left' ? 'left:0' : 'right:0';
+      var trans = p.placement === 'left' ? '-100%' : '100%';
       return '<button data-drawer="' + did + '" style="' + s + '">' + (resolve(p.triggerText) || 'Open') + '</button>' +
-        '<div id="' + did + '" style="position:fixed;top:0;' + pos + ';width:320px;height:100%;background:#12171f;box-shadow:0 0 20px rgba(0,0,0,.5);z-index:999;transform:translateX(' + (p.placement==='left'?'-100%':'100%') + ');transition:transform .3s;padding:1.5rem;overflow-y:auto">' +
+        '<div id="' + did + '" class="a2ui-drawer" style="' + pos + ';transform:translateX(' + trans + ')">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><h3 style="color:#e2e8f0">' + resolve(p.title) + '</h3><button data-close-drawer="' + did + '" style="background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer">✕</button></div>' +
-        (p.children ? renderKids(p.children, byId) : '') + '</div>' +
-        '<style>#' + did + '.open{transform:translateX(0)!important}</style>';
+        (p.children ? renderKids(p.children, byId) : '') + '</div>';
     }
     case 'Menu': {
       var h = '<div style="display:flex;flex-direction:' + (p.mode==='horizontal'?'row':'column') + ';gap:4px;' + s + '">';
