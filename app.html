@@ -1,204 +1,638 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>A2UI App</title>
+<html lang="zh">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A2UI Studio</title>
 <style>
-*{box-sizing:border-box}body{font-family:system-ui;background:#0d1117;color:#c9d1d9;margin:0;height:100vh;display:flex}
-.sidebar{width:300px;background:#161b22;border-right:1px solid #30363d;display:flex;flex-direction:column}
-.sidebar h3{padding:1rem;margin:0;color:#58a6ff;border-bottom:1px solid #30363d}
-.tab{display:flex;border-bottom:1px solid #30363d}
-.tab button{flex:1;padding:.5rem;background:0;color:#8b949e;border:none;cursor:pointer;font-size:.85rem}
-.tab button.active{color:#58a6ff;border-bottom:2px solid #58a6ff}
-.panel{flex:1;overflow-y:auto;padding:1rem}
-.panel label{display:block;font-size:.8rem;color:#8b949e;margin:.5rem 0 .2rem}
-.panel input,.panel textarea,.panel select{width:100%;padding:.4rem;background:#0d1117;color:#eee;border:1px solid #30363d;border-radius:4px;font-size:.85rem}
-.panel textarea{height:60px;resize:vertical}
-.panel button{padding:.4rem 1rem;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-top:.5rem}
-.panel button:hover{background:#2ea043}
-.main{flex:1;display:flex;flex-direction:column}
-.main .toolbar{padding:.5rem 1rem;background:#161b22;border-bottom:1px solid #30363d;display:flex;gap:.5rem;align-items:center}
-.main .toolbar select{background:#0d1117;color:#eee;border:1px solid #30363d;border-radius:4px;padding:.3rem;font-size:.8rem}
-.content{flex:1;padding:1rem;overflow-y:auto}
-.render label{display:block;margin:.4rem 0 .1rem;font-size:.8rem;color:#8b949e}
-.render input,.render select{width:100%;padding:.4rem;background:#0d1117;color:#eee;border:1px solid #30363d;border-radius:4px;margin-bottom:.3rem}
-.render button{padding:.4rem 1rem;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer}
-.render table{width:100%;border-collapse:collapse;margin:.5rem 0}
-.render th{background:#1f6feb;color:#fff;padding:.4rem;text-align:left;font-size:.8rem}
-.render td{padding:.4rem;border-bottom:1px solid #30363d;font-size:.8rem}
-.render tr:nth-child(even) td{background:#1a1a2e}
-.render dialog{background:#161b22;color:#eee;border:1px solid #58a6ff;border-radius:12px;padding:1.5rem;max-width:400px}
-.render dialog::backdrop{background:rgba(0,0,0,.6)}
-pre{font-size:.7rem;overflow:auto;max-height:200px;background:#0d1117;border-radius:6px;padding:.5rem}
-.spin{display:none;color:#d29922;font-size:.8rem}.spin.on{display:block}
-.quick-prompts{display:flex;flex-wrap:wrap;gap:.25rem;margin:.5rem 0}
-.quick-prompts button{font-size:.75rem;padding:.25rem .5rem;background:#0f3460;margin:0}
-</style></head><body>
+:root {
+  --bg: #0a0e14;
+  --surface: #12171f;
+  --border: #1e2733;
+  --text: #b8c5d6;
+  --muted: #5c6a7d;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --success: #22c55e;
+  --card: #161c26;
+  --input-bg: #0f141c;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 400px;
+  min-width: 400px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo span { color: var(--primary); }
+
+.sidebar-body {
+  flex: 1;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+}
+
+.label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.prompt-area {
+  width: 100%;
+  min-height: 100px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.prompt-area:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+
+.btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.btn-primary:hover { background: var(--primary-hover); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  background: var(--card);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  color: var(--text);
+  border-color: var(--primary);
+  background: rgba(59,130,246,0.1);
+}
+
+.status {
+  font-size: 0.8rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.status-ok { color: var(--success); }
+
+/* Main */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.main-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.main-body {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+/* Rendered UI Styles */
+.render label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0.6rem 0 0.2rem;
+  font-weight: 500;
+}
+
+.render input[type="text"],
+.render input[type="email"],
+.render input[type="password"],
+.render select {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.render input:focus,
+.render select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.render button {
+  padding: 0.55rem 1.25rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.render button:hover { background: var(--primary-hover); }
+
+.render table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+}
+
+.render th {
+  background: var(--primary);
+  color: #fff;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.render td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.render tr:hover td { background: var(--card); }
+
+.render dialog {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--primary);
+  border-radius: 14px;
+  padding: 2rem;
+  max-width: 440px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.render dialog::backdrop { background: rgba(0,0,0,0.6); }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+
+.success-msg {
+  color: var(--success);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border);
+  margin-top: 0.75rem;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--muted);
+}
+
+.empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+/* Config panel */
+.config-section {
+  border-top: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.config-grid input {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+
+details summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.8rem;
+  padding: 0.3rem 0;
+}
+
+details summary:hover { color: var(--text); }
+
+pre {
+  font-size: 0.7rem;
+  max-height: 200px;
+  overflow: auto;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+}
+
+/* Animations */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  display: none;
+}
+
+.spinner.active { display: inline-block; }
+
+.loading-text { display: none; color: var(--muted); font-size: 0.8rem; }
+.loading-text.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
 <div class="sidebar">
-<h3>A2UI App</h3>
-<div class="tab">
-<button class="active" onclick="switchTab('generate')">Generate</button>
-<button onclick="switchTab('settings')">Settings</button>
+  <div class="sidebar-header">
+    <div class="logo">⚡ A2UI <span>Studio</span></div>
+  </div>
+  
+  <div class="sidebar-body">
+    <div>
+      <div class="label">Describe your UI</div>
+      <textarea class="prompt-area" id="prompt" placeholder="Describe the interface you want in natural language...&#10;&#10;e.g. A registration form with name, email, phone"></textarea>
+    </div>
+    
+    <div>
+      <div class="chips">
+        <button class="chip" onclick="setPrompt('一个用户注册表单，包含姓名、邮箱、手机号')">📝 注册表单</button>
+        <button class="chip" onclick="setPrompt('一个用户数据表格，包含姓名、年龄、城市')">📊 数据表格</button>
+        <button class="chip" onclick="setPrompt('一个柱状图显示各季度销售额 Q1=100 Q2=200 Q3=150 Q4=300')">📈 柱状图</button>
+        <button class="chip" onclick="setPrompt('一个饼图显示各部门预算 开发=40 市场=30 行政=20 销售=10')">🥧 饼图</button>
+        <button class="chip" onclick="setPrompt('一个带弹窗的确认对话框')">💬 弹窗</button>
+        <button class="chip" onclick="setPrompt('一个带标签页的设置面板')">📑 标签页</button>
+        <button class="chip" onclick="setPrompt('一个折线图显示全年月度访问量')">📉 折线图</button>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="generate()">
+      <span id="btnText">Generate UI</span>
+      <span class="spinner" id="spin"></span>
+    </button>
+    
+    <div class="loading-text" id="loading">DeepSeek is generating your UI...</div>
+
+    <details>
+      <summary>A2UI JSON</summary>
+      <pre id="jsonView">Click Generate to see JSON</pre>
+    </details>
+  </div>
+  
+  <div class="config-section">
+    <details>
+      <summary>⚙️ Model Settings</summary>
+      <div class="config-grid" style="margin-top:0.5rem">
+        <input id="cfgKey" type="password" placeholder="API Key" onchange="saveCfg()">
+        <input id="cfgModel" placeholder="deepseek-chat" onchange="saveCfg()">
+      </div>
+    </details>
+  </div>
 </div>
-<div id="genPanel" class="panel">
-<textarea id="prompt" style="height:80px">一个用户注册表单，包含姓名、邮箱、手机号</textarea>
-<div class="quick-prompts">
-<button onclick="setPrompt('柱状图 季度销售额 Q1=100 Q2=200')">柱状图</button>
-<button onclick="setPrompt('饼图 各部门预算')">饼图</button>
-<button onclick="setPrompt('折线图 每月访问量')">折线图</button>
-<button onclick="setPrompt('用户数据表格 姓名年龄城市')">表格</button>
-<button onclick="setPrompt('带弹窗的确认对话框')">弹窗</button>
-<button onclick="setPrompt('标签页设置面板')">标签页</button>
-</div>
-<button onclick="generate()">Generate UI</button>
-<div class="spin" id="spin">Generating...</div>
-<details style="margin-top:.5rem"><summary style="color:#8b949e;cursor:pointer">JSON</summary><pre id="jsonView"></pre></details>
-</div>
-<div id="settingsPanel" class="panel" style="display:none">
-<label>API Provider</label>
-<select id="cfgProvider" onchange="saveConfig()">
-<option value="deepseek">DeepSeek</option>
-<option value="openai">OpenAI Compatible</option>
-</select>
-<label>API Endpoint</label>
-<input id="cfgEndpoint" placeholder="https://api.deepseek.com/v1" onchange="saveConfig()">
-<label>API Key (stored locally)</label>
-<input id="cfgKey" type="password" placeholder="sk-..." onchange="saveConfig()">
-<label>Model Name</label>
-<input id="cfgModel" placeholder="deepseek-chat" onchange="saveConfig()">
-<button onclick="saveConfig()">Save Settings</button>
-<p style="font-size:.75rem;color:#8b949e;margin-top:1rem">Settings saved in browser localStorage</p>
-</div>
-</div>
+
+<!-- Main -->
 <div class="main">
-<div class="toolbar">
-<select id="presetSelect" onchange="loadPreset()">
-<option value="deepseek-chat">DeepSeek Chat</option>
-<option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
-<option value="gpt-4o">GPT-4o</option>
-<option value="gpt-4o-mini">GPT-4o Mini</option>
-</select>
-<span style="font-size:.8rem;color:#8b949e" id="modelInfo"></span>
+  <div class="main-header">
+    <h2>Generated UI</h2>
+    <span class="status" id="status"></span>
+  </div>
+  <div class="main-body render" id="render">
+    <div class="empty-state">
+      <div class="icon">🎨</div>
+      <p>Describe your UI on the left and click Generate</p>
+    </div>
+  </div>
 </div>
-<div class="content render" id="render"><p style="color:#8b949e">Enter a prompt and click Generate UI</p></div>
-</div>
+
 <script>
+// ============================================
+//  Data & State
+// ============================================
 var formData = {};
 
-function switchTab(tab) {
-  document.querySelectorAll('.tab button').forEach(function(b,i) {
-    b.className = (i===0 && tab==='generate') || (i===1 && tab==='settings') ? 'active' : '';
-  });
-  document.getElementById('genPanel').style.display = tab === 'generate' ? 'block' : 'none';
-  document.getElementById('settingsPanel').style.display = tab === 'settings' ? 'block' : 'none';
+function loadCfg() {
+  try { return JSON.parse(localStorage.getItem('a2ui_cfg') || '{}'); }
+  catch { return {}; }
 }
 
-function setPrompt(text) { document.getElementById('prompt').value = text; }
-
-function loadConfig() {
-  try { return JSON.parse(localStorage.getItem('a2ui_config') || '{}'); } catch { return {}; }
-}
-
-function saveConfig() {
-  var cfg = {
-    provider: document.getElementById('cfgProvider').value,
-    endpoint: document.getElementById('cfgEndpoint').value,
+function saveCfg() {
+  var c = {
     key: document.getElementById('cfgKey').value,
     model: document.getElementById('cfgModel').value
   };
-  localStorage.setItem('a2ui_config', JSON.stringify(cfg));
-  updateModelInfo();
+  localStorage.setItem('a2ui_cfg', JSON.stringify(c));
 }
 
-function updateModelInfo() {
-  var cfg = loadConfig();
-  var model = cfg.model || document.getElementById('presetSelect').value;
-  document.getElementById('modelInfo').textContent = 'Model: ' + model;
-}
+(function initCfg() {
+  var c = loadCfg();
+  document.getElementById('cfgKey').value = c.key || '';
+  document.getElementById('cfgModel').value = c.model || 'deepseek-chat';
+})();
 
-function loadPreset() {
-  var model = document.getElementById('presetSelect').value;
-  document.getElementById('cfgModel').value = model;
-  if (model.startsWith('gpt')) {
-    document.getElementById('cfgProvider').value = 'openai';
-    document.getElementById('cfgEndpoint').value = 'https://api.openai.com/v1';
-  } else {
-    document.getElementById('cfgProvider').value = 'deepseek';
-    document.getElementById('cfgEndpoint').value = 'https://api.deepseek.com/v1';
-  }
-  saveConfig();
-}
+// ============================================
+//  Helpers
+// ============================================
+function setPrompt(t) { document.getElementById('prompt').value = t; }
 
-// Init settings
-var cfg = loadConfig();
-if (!cfg.model) {
-  cfg = { provider: 'deepseek', endpoint: 'https://api.deepseek.com/v1', model: 'deepseek-chat', key: '' };
-  localStorage.setItem('a2ui_config', JSON.stringify(cfg));
-}
-document.getElementById('cfgProvider').value = cfg.provider || 'deepseek';
-document.getElementById('cfgEndpoint').value = cfg.endpoint || 'https://api.deepseek.com/v1';
-document.getElementById('cfgKey').value = cfg.key || '';
-document.getElementById('cfgModel').value = cfg.model || 'deepseek-chat';
-document.getElementById('presetSelect').value = cfg.model || 'deepseek-chat';
-updateModelInfo();
-
-function resolveValue(v) {
+function resolve(v) {
   if (!v) return '';
   if (v.literalString !== undefined) return v.literalString;
   if (v.path) return formData[v.path.replace(/\//g, '')] || '';
   return '';
 }
 
-function renderComponent(cid, byId) {
-  var comp = byId[cid]; if (!comp) return '';
-  var type = Object.keys(comp)[0]; var props = comp[type];
-  switch (type) {
-    case 'Text': return '<' + (props.usageHint || 'span') + '>' + resolveValue(props.text) + '</' + (props.usageHint || 'span') + '>';
-    case 'TextField': var k = (props.text && props.text.path || '').replace(/\//g, ''); return '<label>' + resolveValue(props.label) + '</label><input oninput="formData.' + k + '=this.value">';
-    case 'Button': return '<button onclick="handleSubmit()">' + (props.child ? renderComponent(props.child, byId) : 'Submit') + '</button>';
-    case 'Column': case 'Row': case 'Card':
-      var kids = props.children && props.children.explicitList || [];
-      var inner = ''; for (var i = 0; i < kids.length; i++) inner += renderComponent(kids[i], byId);
-      var style = type === 'Column' ? 'display:flex;flex-direction:column;gap:8px' : type === 'Row' ? 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' : 'background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:.75rem;margin:.5rem 0';
-      return '<div style="' + style + '">' + inner + '</div>';
-    case 'MultipleChoice': var k = (props.selections && props.selections.path || '').replace(/\//g, ''); var o = '<label>' + resolveValue(props.label) + '</label><select onchange="formData.' + k + '=this.value"><option value="">Select</option>'; for (var j = 0; j < (props.options || []).length; j++) o += '<option value="' + resolveValue(props.options[j].value) + '">' + resolveValue(props.options[j].label) + '</option>'; return o + '</select>';
-    case 'Table': var h = '<table><thead><tr>'; var cols = props.columns || []; for (var c = 0; c < cols.length; c++) h += '<th>' + resolveValue(cols[c]) + '</th>'; h += '</tr></thead><tbody>'; var rows = props.rows || []; for (var r = 0; r < rows.length; r++) { h += '<tr>'; for (var cell = 0; cell < rows[r].length; cell++) h += '<td>' + resolveValue(rows[r][cell]) + '</td>'; h += '</tr>'; } return h + '</tbody></table>';
-    case 'Modal': var mid = 'mdl' + Math.random().toString(36).slice(2, 8); return '<button style="background:#0f3460;padding:.3rem .75rem;border-radius:4px;border:none;color:#eee;cursor:pointer" onclick="document.getElementById(\'' + mid + '\').showModal()">' + (resolveValue(props.triggerText) || 'Open') + '</button><dialog id="' + mid + '"><h3>' + resolveValue(props.title) + '</h3>' + (props.content ? renderModalContent(props.content, byId) : '') + '<br><button onclick="document.getElementById(\'' + mid + '\').close()">Close</button></dialog>';
-    case 'Tabs': var tid = 'tab' + Math.random().toString(36).slice(2, 6); var tabs = props.tabs || []; var contents = props.contents || []; var bar = '<div style="display:flex;gap:4px;margin:.5rem 0">'; for (var t = 0; t < tabs.length; t++) bar += '<button style="background:#0f3460;padding:.25rem .75rem;border:none;border-radius:4px;color:#eee;cursor:pointer;font-size:.8rem" onclick="(function(){var ds=document.querySelectorAll(\\\'[data-tabs=' + tid + ']\\\');for(var j=0;j<ds.length;j++)ds[j].style.display=j===' + t + '?\\\'block\\\':\\\'none\\\'})()">' + resolveValue(tabs[t]) + '</button>'; bar += '</div><div>'; for (var c = 0; c < contents.length; c++) bar += '<div data-tabs="' + tid + '" style="display:' + (c === 0 ? 'block' : 'none') + '">' + renderModalContent(contents[c], byId) + '</div>'; return bar + '</div>';
-    case 'Chart': if (props.imageBase64) return '<div style="text-align:center;padding:1rem;margin:.5rem 0;background:#0d1117;border:1px solid #30363d;border-radius:8px"><strong style="color:#58a6ff;display:block;margin-bottom:.5rem">' + resolveValue(props.title) + '</strong><img src="' + props.imageBase64 + '" style="max-width:100%;border-radius:8px"></div>'; var ds = props.datasets || []; var dsStr = ''; for (var d = 0; d < ds.length; d++) dsStr += ds[d].label + ':[' + ds[d].data.join(',') + '] '; return '<div style="text-align:center;padding:1rem;background:#0d1117;border:1px solid #30363d;border-radius:8px;margin:.5rem 0"><strong style="color:#58a6ff">' + resolveValue(props.title) + '</strong><p style="color:#8b949e;font-size:.8rem">' + (props.labels || []).join(',') + ' | ' + dsStr + '</p></div>';
-    default: return '';
+// ============================================
+//  Render Engine
+// ============================================
+function renderComponent(id, byId) {
+  var c = byId[id];
+  if (!c) return '';
+  var t = Object.keys(c)[0];
+  var p = c[t];
+
+  switch (t) {
+    case 'Text': {
+      var tag = p.usageHint || 'span';
+      var style = 'color:#e2e8f0;';
+      if (p.usageHint === 'h1') style += 'font-size:1.5rem;font-weight:700;margin-bottom:0.5rem;';
+      else if (p.usageHint === 'h2') style += 'font-size:1.15rem;font-weight:600;margin-bottom:0.3rem;';
+      return '<' + tag + ' style="' + style + '">' + resolve(p.text) + '</' + tag + '>';
+    }
+
+    case 'TextField': {
+      var key = (p.text && p.text.path || '').replace(/\//g, '');
+      return '<label>' + resolve(p.label) + '</label><input type="text" oninput="formData.' + key + '=this.value" placeholder="' + resolve(p.label) + '">';
+    }
+
+    case 'Button':
+      return '<button onclick="handleSubmit()">' + (p.child ? renderComponent(p.child, byId) : 'Submit') + '</button>';
+
+    case 'Column': {
+      var kids = p.children && p.children.explicitList || [];
+      var html = '';
+      for (var i = 0; i < kids.length; i++) html += renderComponent(kids[i], byId);
+      return '<div style="display:flex;flex-direction:column;gap:12px">' + html + '</div>';
+    }
+
+    case 'Row': {
+      var kids = p.children && p.children.explicitList || [];
+      var html = '';
+      for (var i = 0; i < kids.length; i++) html += renderComponent(kids[i], byId);
+      return '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' + html + '</div>';
+    }
+
+    case 'Card': {
+      var kids = p.children && p.children.explicitList || [];
+      var html = '';
+      for (var i = 0; i < kids.length; i++) html += renderComponent(kids[i], byId);
+      return '<div class="card">' + html + '</div>';
+    }
+
+    case 'MultipleChoice': {
+      var key = (p.selections && p.selections.path || '').replace(/\//g, '');
+      var opts = '<label>' + resolve(p.label) + '</label><select onchange="formData.' + key + '=this.value"><option value="">Select...</option>';
+      var choices = p.options || [];
+      for (var j = 0; j < choices.length; j++)
+        opts += '<option value="' + resolve(choices[j].value) + '">' + resolve(choices[j].label) + '</option>';
+      return opts + '</select>';
+    }
+
+    case 'Checkbox':
+      return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" style="width:auto"> ' + resolve(p.label) + '</label>';
+
+    case 'Slider':
+      return '<label>' + resolve(p.label) + '</label><input type="range" min="' + (p.min || 0) + '" max="' + (p.max || 100) + '" value="' + (p.value || 50) + '" style="width:100%">';
+
+    case 'Divider':
+      return '<hr style="border:none;border-top:1px solid var(--border);margin:4px 0">';
+
+    case 'Table': {
+      var cols = p.columns || [];
+      var rows = p.rows || [];
+      var h = '<table><thead><tr>';
+      for (var c = 0; c < cols.length; c++) h += '<th>' + resolve(cols[c]) + '</th>';
+      h += '</tr></thead><tbody>';
+      for (var r = 0; r < rows.length; r++) {
+        h += '<tr>';
+        for (var c2 = 0; c2 < rows[r].length; c2++) h += '<td>' + resolve(rows[r][c2]) + '</td>';
+        h += '</tr>';
+      }
+      return h + '</tbody></table>';
+    }
+
+    case 'Modal': {
+      var mid = 'mdl' + Math.random().toString(36).slice(2, 8);
+      return '<button onclick="document.getElementById(\'' + mid + '\').showModal()">' + (resolve(p.triggerText) || 'Open') + '</button>' +
+        '<dialog id="' + mid + '"><h3 style="color:#e2e8f0;margin-bottom:1rem">' + resolve(p.title) + '</h3>' +
+        (p.content ? renderModalContent(p.content, byId) : '') +
+        '<br><button onclick="document.getElementById(\'' + mid + '\').close()" style="margin-top:1rem">Close</button></dialog>';
+    }
+
+    case 'Tabs': {
+      var tid = 'tab' + Math.random().toString(36).slice(2, 6);
+      var tabs = p.tabs || [];
+      var contents = p.contents || [];
+      var bar = '<div style="display:flex;gap:4px;margin-bottom:0.75rem">';
+      for (var ti = 0; ti < tabs.length; ti++) {
+        bar += '<button class="btn btn-ghost btn-sm" onclick="(function(){var ds=document.querySelectorAll(\\\'[data-tabs=' + tid + ']\\\');for(var j=0;j<ds.length;j++)ds[j].style.display=j===' + ti + '?\\\'block\\\':\\\'none\\\'})()">' + resolve(tabs[ti]) + '</button>';
+      }
+      bar += '</div><div>';
+      for (var ci = 0; ci < contents.length; ci++) {
+        bar += '<div data-tabs="' + tid + '" style="display:' + (ci === 0 ? 'block' : 'none') + '">' + renderModalContent(contents[ci], byId) + '</div>';
+      }
+      return bar + '</div>';
+    }
+
+    case 'Chart': {
+      if (p.imageBase64) {
+        return '<div style="text-align:center;padding:1rem;background:var(--card);border:1px solid var(--border);border-radius:var(--radius)">' +
+          '<div style="font-weight:600;color:#e2e8f0;margin-bottom:0.75rem">' + resolve(p.title) + '</div>' +
+          '<img src="' + p.imageBase64 + '" style="max-width:100%;border-radius:8px">' +
+          '<div style="font-size:0.7rem;color:var(--muted);margin-top:0.5rem">Server-side rendered (matplotlib)</div></div>';
+      }
+      var ds = p.datasets || [];
+      var dsStr = '';
+      for (var d = 0; d < ds.length; d++) dsStr += ds[d].label + ':[' + ds[d].data.join(',') + '] ';
+      return '<div style="text-align:center;padding:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:var(--radius)">' +
+        '<div style="font-weight:600;color:#e2e8f0;margin-bottom:0.5rem">' + resolve(p.title) + '</div>' +
+        '<div style="color:var(--muted);font-size:0.8rem">' + (p.labels || []).join(',') + ' | ' + dsStr + '</div></div>';
+    }
   }
+  return '';
 }
 
 function renderModalContent(obj, byId) {
   var kids = obj && obj.explicitList || [];
-  var h = '<div style="display:flex;flex-direction:column;gap:8px">';
+  var h = '<div style="display:flex;flex-direction:column;gap:10px">';
   for (var i = 0; i < kids.length; i++) h += renderComponent(kids[i], byId);
   return h + '</div>';
 }
 
 function handleSubmit() {
-  var p = []; for (var k in formData) if (formData[k]) p.push(k + '=' + formData[k]);
-  document.getElementById('render').innerHTML += '<p style="color:#3fb950;margin-top:.5rem">Submitted: ' + p.join(', ') + '</p>';
+  var parts = [];
+  for (var k in formData) if (formData[k]) parts.push(k + '=' + formData[k]);
+  document.getElementById('render').insertAdjacentHTML('beforeend',
+    '<div class="success-msg">✅ Submitted: ' + parts.join(', ') + '</div>');
 }
 
+// ============================================
+//  API
+// ============================================
 function generate() {
   var prompt = document.getElementById('prompt').value.trim();
   if (!prompt) return;
-  document.getElementById('spin').className = 'spin on';
+
+  document.getElementById('spin').classList.add('active');
+  document.getElementById('btnText').textContent = 'Generating...';
+  document.getElementById('loading').classList.add('active');
   formData = {};
 
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/a2ui/generate');
   xhr.setRequestHeader('Content-Type', 'application/json');
+  
   xhr.onload = function () {
-    document.getElementById('spin').className = 'spin';
-    if (xhr.status !== 200) return;
+    document.getElementById('spin').classList.remove('active');
+    document.getElementById('btnText').textContent = 'Generate UI';
+    document.getElementById('loading').classList.remove('active');
+
+    if (xhr.status !== 200) {
+      document.getElementById('render').innerHTML = '<div class="empty-state"><p style="color:#ef4444">Server error: ' + xhr.status + '</p></div>';
+      return;
+    }
+
     var resp = JSON.parse(xhr.responseText);
-    if (resp.error) { document.getElementById('render').innerHTML = '<p style="color:#f85149">' + resp.error + '</p>'; return; }
+    if (resp.error) {
+      document.getElementById('render').innerHTML = '<div class="empty-state"><p style="color:#ef4444">' + resp.error + '</p></div>';
+      return;
+    }
+
     var ui = resp.ui;
     document.getElementById('jsonView').textContent = JSON.stringify(ui, null, 2);
+
     var comps = ui.surfaceUpdate.components;
-    var byId = {}; for (var i = 0; i < comps.length; i++) byId[comps[i].id] = comps[i].component;
+    var byId = {};
+    for (var i = 0; i < comps.length; i++) byId[comps[i].id] = comps[i].component;
+
     document.getElementById('render').innerHTML = renderComponent('root', byId);
+    document.getElementById('status').innerHTML = '<span style="color:var(--success)">●</span> Generated ' + new Date().toLocaleTimeString();
   };
+
+  xhr.onerror = function () {
+    document.getElementById('spin').classList.remove('active');
+    document.getElementById('btnText').textContent = 'Generate UI';
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('render').innerHTML = '<div class="empty-state"><p style="color:#ef4444">Connection failed. Is the server running?</p></div>';
+  };
+
   xhr.send(JSON.stringify({ prompt: prompt }));
 }
 </script>

@@ -199,4 +199,4 @@ const server = http.createServer(async (req, res) => {
   } catch { res.writeHead(404); res.end('Not found'); }
 });
 
-server.listen(3456, () => console.log('Server on http://localhost:3456'));
+server.listen(3456, '127.0.0.1', () => console.log('Server on http://localhost:3456'));
