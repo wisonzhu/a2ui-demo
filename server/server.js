@@ -399,59 +399,25 @@ StorageClass: ssd-fast(512G已用380G) hdd-standard(1.5TB已用820G)`;
   return `Unknown data source: ${source}`;
 }
 async function dataAgent(prompt) {
-  const system = `You are a DevOps Data Agent. You have access to shell commands via a function call. Use run_command(cmd) to query system data. Then generate A2UI JSON to visualize findings. Steps:
-1. Decide what data is needed
-2. Call run_command with appropriate shell commands
-3. Analyze the results
-4. Generate A2UI surfaceUpdate JSON
-
-Available commands: "top -l 1 -n 0" (CPU), "vm_stat" (memory), "df -h" (disk), "ps aux -r | head -6" (processes), "uptime" (load), "hostname", "ifconfig en0", "netstat -an | head". Combine multiple commands separated by &&.
-IMPORTANT: First output a JSON with run_command calls, I'll return results, then you generate A2UI. Format:
-{step:"query", commands:["cmd1","cmd2"]}`;
-
-  let messages = [{role:'system',content:system},{role:'user',content:prompt}];
-  let resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
-    signal: AbortSignal.timeout(25000), method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+DEEPSEEK_KEY},
-    body:JSON.stringify({model:'deepseek-chat',messages,temperature:0.3,max_tokens:2000})
-  });
-  let data = await resp.json();
-  let text = data.choices?.[0]?.message?.content||'{}';
-  text = text.replace(/```json|```/g,'').trim();
+  // Execute system commands to get real data
+  let realData = '系统实时数据:\n';
+  try {
+    realData += '主机名: ' + execSync('hostname',{encoding:'utf8'}).trim() + '\n';
+    realData += '系统: ' + os.release() + ' 运行' + Math.floor(os.uptime()/86400) + '天\n';
+    realData += 'CPU: ' + execSync("top -l 1 -n 0 | grep 'CPU usage' | awk '{print $3}'",{encoding:'utf8'}).trim() + '\n';
+    let mTotal = os.totalmem()/1024/1024/1024, mFree = os.freemem()/1024/1024/1024;
+    realData += '内存: 总量'+mTotal.toFixed(1)+'G 已用'+(((mTotal-mFree)/mTotal*100).toFixed(0))+'% 可用'+mFree.toFixed(1)+'G\n';
+    realData += '磁盘: ' + execSync("df -h / | tail -1 | awk '{print $5}'",{encoding:'utf8'}).trim() + '\n';
+    realData += '负载: ' + os.loadavg().map(l=>l.toFixed(1)).join(' ') + '\n';
+    realData += '进程: ' + execSync('ps aux|wc -l',{encoding:'utf8'}).trim() + '个\n';
+    realData += 'TOP5进程:\n' + execSync("ps aux -r|head -6|tail -5|awk '{print $11,$3\"%\",$4\"%\"}'",{encoding:'utf8'}).trim() + '\n';
+    realData += '磁盘详情:\n' + execSync("df -h|tail -n+2|awk '{print $1,$2,$3,$4,$5}'",{encoding:'utf8'}).trim() + '\n';
+    realData += '网络: ' + execSync("ifconfig en0|grep 'inet '|awk '{print $2}'",{encoding:'utf8'}).trim() + '\n';
+    realData += '连接数: ' + execSync("netstat -an 2>/dev/null|grep -c ESTABLISHED||echo 0",{encoding:'utf8'}).trim();
+  } catch(e) { realData += 'Error: '+e.message; }
   
-  let step;
-  try { step = JSON.parse(text); } catch(e) { step = {}; }
-  
-  if (step.step === 'query' && step.commands) {
-    // Execute commands
-    let results = '';
-    for (let cmd of step.commands) {
-      try {
-        let out = execSync(cmd, {encoding:'utf8',timeout:10000}).slice(0,500);
-        results += `\n--- ${cmd} ---\n${out}`;
-      } catch(e) { results += `\n--- ${cmd} --- Error: ${e.message}`; }
-    }
-    
-    // Second call: generate A2UI with data
-    messages.push({role:'assistant',content:JSON.stringify(step)});
-    messages.push({role:'user',content:'Command results:\n'+results+'\n\nNow generate the A2UI JSON visualization based on this data. Output ONLY the surfaceUpdate JSON.'});
-    resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      signal: AbortSignal.timeout(30000), method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+DEEPSEEK_KEY},
-      body:JSON.stringify({model:'deepseek-chat',messages,temperature:0.3,max_tokens:8192})
-    });
-    data = await resp.json();
-    text = data.choices?.[0]?.message?.content||'{}';
-    text = text.replace(/```json|```/g,'').trim();
-  }
-  
-  let ui;
-  try { ui = JSON.parse(text); }
-  catch {
-    let m = text.match(/\{[\s\S]*\}/);
-    ui = m ? JSON.parse(m[0]) : {};
-  }
-  return ui;
+  // Use a2uiGen with real data injected
+  return await a2uiGen('真实系统数据:\n'+realData+'\n\n用户需求: '+prompt+'\n\n请基于以上真实数据生成A2UI可视化面板。异常用Alert标注，趋势用Chart展示，列表用Table。');
 }
 
 async function a2uiGen(prompt) {
