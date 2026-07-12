@@ -56,6 +56,12 @@ async function a2uiGen(prompt) {
 MUST use this EXACT structure:
 {"surfaceUpdate":{"components":[{"id":"root","component":{"Column":{"children":{"explicitList":["t1","f1","btn"]}}}},{"id":"t1","component":{"Text":{"text":{"literalString":"Title"},"usageHint":"h2"}}},{"id":"f1","component":{"TextField":{"label":{"literalString":"Name"},"text":{"path":"/name"}}}},{"id":"btn","component":{"Button":{"child":"btnLbl","action":{"name":"submit"}}}},{"id":"btnLbl","component":{"Text":{"text":{"literalString":"Submit"}}}}]}}
 
+TABLE EXAMPLE:
+{"id":"table1","component":{"Table":{"columns":["Name","Age","City"],"rows":[["Alice","25","NYC"],["Bob","30","LA"]]}}}
+
+DATAGRID EXAMPLE:
+{"id":"dg1","component":{"DataGrid":{"title":{"literalString":"Users"},"columns":[{"header":"Name","accessor":"name"},{"header":"Age","accessor":"age"}],"rows":[["Alice","25"],["Bob","30"]],"pageSize":10}}}
+
 All available components (MUST include style where relevant for appearance):
 FORM: TextField(label+text:path+style:{backgroundColor,borderColor,...}), Button(child+action:{name:"submit"}+style:{backgroundColor,color,...}), MultipleChoice(label+options:[{value,label}]+style), Checkbox(label+style), Switch(label+checked+style), Slider(label+min+max+value+style), DateTimePicker(label+path+style), Rate(label+max+value+style), FileUpload(label+accept+multiple+style)
 DATA: Table(columns+rows+style), DataGrid(title+columns+rows+pageSize+actions+style), Pagination(currentPage+totalPages+style)
