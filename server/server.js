@@ -440,7 +440,7 @@ Every component MUST have "id" and "component" fields. Output ONLY valid JSON, n
     body: JSON.stringify({
       model: 'deepseek-chat',
       messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
-      temperature: 0.7, max_tokens: 32000
+      temperature: 0.7, max_tokens: 8192
     })
   }).catch(e => {
     console.error('DeepSeek fetch error:', e.message);
@@ -603,6 +603,10 @@ const server = http.createServer(async (req, res) => {
         // Scene 4: Feedback → Thanks
         else if (action === 'submit' && context.form === 'feedback') {
           nextUI = await a2uiGen('反馈提交成功！感谢您的反馈，显示一个Alert成功提示，反馈类型是'+(data.type||''));
+        }
+        // Scene 5: Incident report
+        else if (action === 'submit' && context.form === 'incident') {
+          nextUI = await a2uiGen('故障已申报！工单号INC-' + Math.floor(Math.random()*9000+1000) + '。显示Alert成功提示，内容包括主机名'+(data.host||'')+'严重级别'+(data.level||'')+'。Timeline显示预期处理流程：接单(待处理)→排查(待处理)→修复(待处理)→验证(待处理)');
         }
         // Generic: any submit → summary
         else {
