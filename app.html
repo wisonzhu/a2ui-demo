@@ -582,18 +582,202 @@ function renderComponent(id, byId) {
   return '';
 }
 
-function renderModalContent(obj, byId) {
-  var kids = obj && obj.explicitList || [];
-  var h = '<div style="display:flex;flex-direction:column;gap:10px">';
-  for (var i = 0; i < kids.length; i++) h += renderComponent(kids[i], byId);
-  return h + '</div>';
+function styleStr(s) {
+  if (!s) return '';
+  var css = '';
+  for (var k in s) css += k.replace(/([A-Z])/g,'-$1').toLowerCase() + ':' + s[k] + ';';
+  return css;
 }
 
-function handleSubmit() {
-  var parts = [];
-  for (var k in formData) if (formData[k]) parts.push(k + '=' + formData[k]);
-  document.getElementById('render').insertAdjacentHTML('beforeend',
-    '<div class="success-msg">✅ Submitted: ' + parts.join(', ') + '</div>');
+function renderKids(list, byId) {
+  var h = '', kids = list && list.explicitList || [];
+  for (var i = 0; i < kids.length; i++) h += renderComponent(kids[i], byId);
+  return h;
+}
+
+// ============================================
+//  Render Engine  
+// ============================================
+function renderComponent(id, byId) {
+  var c = byId[id];
+  if (!c) return '';
+  var t = Object.keys(c)[0];
+  var p = c[t];
+  var s = styleStr(p.style);
+
+  switch (t) {
+    case 'TextField': {
+      var key = (p.text && p.text.path || '').replace(/\//g, '');
+      return '<label>' + resolve(p.label) + '</label><input type="text" oninput="formData.' + key + '=this.value" placeholder="' + resolve(p.label) + '" style="' + s + '">';
+    }
+    case 'Button':
+      return '<button onclick="handleSubmit()"' + (s?' style="'+s+'"':'') + '>' + (p.child ? renderComponent(p.child, byId) : 'Submit') + '</button>';
+    case 'Column':
+      return '<div style="display:flex;flex-direction:column;gap:12px;' + s + '">' + renderKids(p.children, byId) + '</div>';
+    case 'Row':
+      return '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;' + s + '">' + renderKids(p.children, byId) + '</div>';
+    case 'Card':
+      return '<div class="card" style="' + s + '">' + renderKids(p.children, byId) + '</div>';
+    case 'Text': {
+      var tag = p.usageHint || 'span';
+      var ps = 'color:#e2e8f0;';
+      if (p.usageHint === 'h1') ps += 'font-size:1.5rem;font-weight:700;margin-bottom:0.5rem;';
+      else if (p.usageHint === 'h2') ps += 'font-size:1.15rem;font-weight:600;margin-bottom:0.3rem;';
+      return '<' + tag + ' style="' + ps + s + '">' + resolve(p.text) + '</' + tag + '>';
+    }
+    case 'MultipleChoice': {
+      var key = (p.selections && p.selections.path || '').replace(/\//g, '');
+      var opts = '<label>' + resolve(p.label) + '</label><select onchange="formData.' + key + '=this.value" style="' + s + '"><option value="">Select...</option>';
+      var choices = p.options || [];
+      for (var j = 0; j < choices.length; j++)
+        opts += '<option value="' + resolve(choices[j].value) + '">' + resolve(choices[j].label) + '</option>';
+      return opts + '</select>';
+    }
+    case 'Checkbox':
+      return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;' + s + '"><input type="checkbox" style="width:auto"> ' + resolve(p.label) + '</label>';
+    case 'Switch':
+      return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;' + s + '"><input type="checkbox"' + (p.checked ? ' checked' : '') + ' style="width:auto"> ' + resolve(p.label) + '</label>';
+    case 'Slider':
+      return '<label>' + resolve(p.label) + '</label><input type="range" min="' + (p.min || 0) + '" max="' + (p.max || 100) + '" value="' + (p.value || 50) + '" style="width:100%;' + s + '">';
+    case 'Rate': {
+      var h = '', max = p.max || 5, v = p.value || 0;
+      for (var j = 1; j <= max; j++) h += '<span style="cursor:pointer;font-size:1.2rem;' + (j <= v ? 'color:#f59e0b' : 'color:#333') + '">★</span>';
+      return '<div style="' + s + '">' + h + '</div>';
+    }
+    case 'DateTimePicker':
+      return '<label>' + resolve(p.label) + '</label><input type="datetime-local" style="' + s + '">';
+    case 'FileUpload':
+      return '<label style="display:block;' + s + '">' + resolve(p.label) + '</label><input type="file"' + (p.multiple ? ' multiple' : '') + (p.accept ? ' accept="' + p.accept + '"' : '') + '>';
+    case 'Table': {
+      var cols = p.columns || [], rows = p.rows || [];
+      var h = '<table style="' + s + '"><thead><tr>';
+      for (var c = 0; c < cols.length; c++) {
+        var col = cols[c];
+        h += '<th>' + (typeof col === 'string' ? col : resolve(col.header || col)) + '</th>';
+      }
+      h += '</tr></thead><tbody>';
+      for (var r = 0; r < rows.length; r++) {
+        h += '<tr>';
+        var row = rows[r], cells = Array.isArray(row) ? row : (row.cells || []);
+        for (var cc = 0; cc < cells.length; cc++) {
+          var cell = cells[cc];
+          h += '<td>' + (typeof cell === 'string' ? cell : resolve(cell.value || cell)) + '</td>';
+        }
+        h += '</tr>';
+      }
+      return h + '</tbody></table>';
+    }
+    case 'DataGrid': {
+      var gridId = 'grid' + Math.random().toString(36).slice(2,6);
+      var pageSize = p.pageSize || 10, page = 0;
+      var allRows = p.rows || [], totalPages = Math.ceil(allRows.length / pageSize);
+      var renderPage = function() {
+        var start = page * pageSize, end = start + pageSize;
+        var vis = allRows.slice(start, end);
+        return vis.map(function(rowr){return rowr;});
+      };
+      var cols = p.columns || [];
+      var h = '<div style="' + s + '">';
+      if (p.title) h += '<h3 style="color:#e2e8f0;margin:0 0 .5rem">' + resolve(p.title) + '</h3>';
+      if (p.searchable) h += '<input placeholder="Search..." style="margin-bottom:.5rem;width:200px">';
+      h += '<table><thead><tr>';
+      for (var c = 0; c < cols.length; c++) h += '<th>' + (cols[c].header||'') + '</th>';
+      h += '</tr></thead><tbody id="' + gridId + '-body'></tbody></table>';
+      h += '<div style="margin-top:.5rem;display:flex;gap:4px" id="' + gridId + '-pager">';
+      for (var pg = 0; pg < totalPages; pg++) h += '<button onclick="(function(){page=' + pg + ';document.getElementById(\\\'' + gridId + '-body\\\').innerHTML=renderPage().map(function(r){var h=\\\'<tr>\\\';var cells=Array.isArray(r)?r:(r.cells||[]);for(var i=0;i<cells.length;i++){var cell=cells[i];h+=\\\'<td>\\\'+(typeof cell===\\\'string\\\'?cell:(cell.value||\\\'\\\'))+\\\'</td>\\\'}return h+\\\'</tr>\\\';}).join(\\\'\\\');})()" style="padding:.25rem .5rem;font-size:.8rem">' + (pg+1) + '</button>';
+      h += '</div></div>';
+      return h;
+    }
+    case 'Pagination':
+      return '<div style="display:flex;gap:4px;' + s + '">' + Array.from({length: p.totalPages||1}, function(_,i){return '<button style="padding:.25rem .5rem;font-size:.8rem">' + (i+1) + '</button>';}).join('') + '</div>';
+    case 'Modal': {
+      var mid = 'mdl' + Math.random().toString(36).slice(2,8);
+      return '<button onclick="document.getElementById(\\'' + mid + '\\').showModal()" style="' + s + '">' + (resolve(p.triggerText) || 'Open') + '</button>' +
+        '<dialog id="' + mid + '"><h3 style="color:#e2e8f0;margin-bottom:1rem">' + resolve(p.title) + '</h3>' +
+        (p.content ? renderKids(p.content, byId) : '') +
+        '<br><button onclick="document.getElementById(\\'' + mid + '\\').close()" style="margin-top:1rem">Close</button></dialog>';
+    }
+    case 'Tabs': {
+      var tid = 'tab' + Math.random().toString(36).slice(2,6);
+      var tabs = p.tabs || [], contents = p.contents || [];
+      var bar = '<div style="display:flex;gap:4px;margin-bottom:.75rem;' + s + '">';
+      for (var ti = 0; ti < tabs.length; ti++)
+        bar += '<button class="btn btn-ghost btn-sm" onclick="(function(){var ds=document.querySelectorAll(\\\'[data-tabs=' + tid + ']\\\');for(var j=0;j<ds.length;j++)ds[j].style.display=j===' + ti + '?\\\'block\\\':\\\'none\\\'})()">' + resolve(tabs[ti]) + '</button>';
+      bar += '</div><div>';
+      for (var ci = 0; ci < contents.length; ci++)
+        bar += '<div data-tabs="' + tid + '" style="display:' + (ci===0?'block':'none') + '">' + renderKids(contents[ci], byId) + '</div>';
+      return bar + '</div>';
+    }
+    case 'Drawer': {
+      var did = 'drw' + Math.random().toString(36).slice(2,6);
+      var pos = p.placement === 'left' ? 'left:0' : 'right:0';
+      return '<button onclick="document.getElementById(\\'' + did + '\\').classList.toggle(\\\'open\\\')" style="' + s + '">' + (resolve(p.triggerText) || 'Open') + '</button>' +
+        '<div id="' + did + '" style="position:fixed;top:0;' + pos + ';width:320px;height:100%;background:#12171f;box-shadow:0 0 20px rgba(0,0,0,.5);z-index:999;transform:translateX(' + (p.placement==='left'?'-100%':'100%') + ');transition:transform .3s;padding:1.5rem;overflow-y:auto">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><h3 style="color:#e2e8f0">' + resolve(p.title) + '</h3><button onclick="this.parentElement.parentElement.classList.remove(\\\'open\\\')" style="background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer">✕</button></div>' +
+        (p.children ? renderKids(p.children, byId) : '') + '</div>' +
+        '<style>#' + did + '.open{transform:translateX(0)!important}</style>';
+    }
+    case 'Menu': {
+      var h = '<div style="display:flex;flex-direction:' + (p.mode==='horizontal'?'row':'column') + ';gap:4px;' + s + '">';
+      var renderMenuItem = function(items) {
+        var out = '';
+        for (var i = 0; i < items.length; i++) {
+          var it = items[i];
+          out += '<div style="padding:.5rem 1rem;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background=\\'rgba(59,130,246,.15)\\'" onmouseout="this.style.background=\\'transparent\\'">' + (it.icon||'') + ' ' + resolve(it.label);
+          if (it.children) out += '<div>' + renderMenuItem(it.children) + '</div>';
+          out += '</div>';
+        }
+        return out;
+      };
+      return h + renderMenuItem(p.items || []) + '</div>';
+    }
+    case 'Breadcrumb':
+      return '<div style="display:flex;gap:4px;align-items:center;color:#999;font-size:.85rem;' + s + '">' + (p.items||[]).map(function(it,i){return '<span>' + (i>0?' / ':'') + resolve(it.label) + '</span>';}).join('') + '</div>';
+    case 'Steps': {
+      var h = '<div style="display:flex;gap:2rem;' + s + '">';
+      (p.items||[]).forEach(function(st,i){
+        var status = st.status || 'wait', color = status==='finish'?'#22c55e':status==='process'?'#3b82f6':'#333';
+        h += '<div style="flex:1;text-align:center"><div style="width:24px;height:24px;border-radius:50%;background:' + color + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem">' + (i+1) + '</div><div style="font-size:.8rem;margin-top:.25rem">' + resolve(st.title) + '</div></div>';
+      });
+      return h + '</div>';
+    }
+    case 'Message':
+      return '<div style="padding:.75rem 1rem;border-radius:8px;margin:.5rem 0;' + (p.type==='success'?'background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.3)':p.type==='error'?'background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3)':p.type==='warning'?'background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.3)':'background:rgba(59,130,246,.1);color:#3b82f6;border:1px solid rgba(59,130,246,.3)') + ';' + s + '">' + resolve(p.content) + '</div>';
+    case 'Notification':
+      return '<div style="position:fixed;top:1rem;right:1rem;background:#12171f;border:1px solid ' + (p.type==='error'?'#ef4444':p.type==='warning'?'#f59e0b':'#3b82f6') + ';border-radius:10px;padding:1rem;box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:999;' + s + '"><b style="color:#e2e8f0">' + resolve(p.title) + '</b><p style="color:#999;margin:.25rem 0 0;font-size:.85rem">' + resolve(p.content) + '</p></div>';
+    case 'Tag':
+      return '<span style="display:inline-block;padding:.15rem .5rem;border-radius:12px;font-size:.75rem;' + (p.type==='success'?'background:rgba(34,197,94,.15);color:#22c55e':p.type==='warning'?'background:rgba(245,158,11,.15);color:#f59e0b':p.type==='danger'?'background:rgba(239,68,68,.15);color:#ef4444':'background:rgba(59,130,246,.15);color:#3b82f6') + ';' + s + '">' + resolve(p.text) + '</span>';
+    case 'Badge':
+      return '<span style="position:relative;display:inline-block;' + s + '">' + (p.child ? renderComponent(p.child, byId) : '') + '<sup style="position:absolute;top:-8px;right:-8px;background:#ef4444;color:#fff;border-radius:10px;padding:0 5px;font-size:.7rem;min-width:16px;text-align:center">' + (p.value||0) + '</sup></span>';
+    case 'Progress':
+      return '<div style="width:100%;' + s + '"><div style="background:#30363d;border-radius:8px;height:8px"><div style="background:#3b82f6;border-radius:8px;height:8px;width:' + (p.percent||0) + '%"></div></div><span style="font-size:.75rem;color:#999">' + (p.percent||0) + '%</span></div>';
+    case 'StatCard': {
+      var c = p.color || '#3b82f6';
+      return '<div class="card" style="text-align:center;' + s + '">' + (p.icon||'') + '<div style="font-size:1.5rem;font-weight:700;color:' + c + '">' + resolve(p.value) + '</div><div style="font-size:.8rem;color:#999;margin-top:.25rem">' + resolve(p.label) + '</div>' + (p.trend?'<div style="font-size:.75rem;color:' + (p.trend==='up'?'#22c55e':'#ef4444') + '">' + (p.trend==='up'?'↑':'↓') + '</div>':'') + '</div>';
+    }
+    case 'Accordion': {
+      var accId = 'acc' + Math.random().toString(36).slice(2,6);
+      var h = '<div style="' + s + '">';
+      (p.items||[]).forEach(function(it,i){
+        h += '<details style="margin-bottom:4px"><summary style="cursor:pointer;padding:.5rem;background:rgba(59,130,246,.05);border-radius:6px">' + resolve(it.title) + '</summary><div style="padding:.5rem">' + (it.content ? renderKids(it.content, byId) : '') + '</div></details>';
+      });
+      return h + '</div>';
+    }
+    case 'Timeline':
+      return '<div style="border-left:2px solid #3b82f6;padding-left:1rem;' + s + '">' + (p.items||[]).map(function(it){return '<div style="margin-bottom:1rem"><div style="font-size:.75rem;color:#999">' + resolve(it.time) + '</div><div style="color:#e2e8f0">' + resolve(it.content) + '</div></div>';}).join('') + '</div>';
+    case 'Image':
+      return '<img src="' + (p.url||'') + '" alt="' + (p.alt||'') + '" style="max-width:100%;' + (p.width?'width:'+p.width+';':'') + (p.height?'height:'+p.height+';':'') + s + '">';
+    case 'Divider':
+      return '<hr style="border:none;border-top:1px solid #333;margin:4px 0;' + s + '">';
+    case 'Chart': {
+      if (p.imageBase64)
+        return '<div style="text-align:center;padding:1rem;background:#161c26;border:1px solid #1e2733;border-radius:10px;' + s + '"><div style="font-weight:600;color:#e2e8f0;margin-bottom:.75rem">' + resolve(p.title) + '</div><img src="' + p.imageBase64 + '" style="max-width:100%;border-radius:8px"></div>';
+      var ds = p.datasets || [], dsStr = '';
+      for (var d = 0; d < ds.length; d++) dsStr += ds[d].label + ':[' + ds[d].data.join(',') + '] ';
+      return '<div style="text-align:center;padding:1.5rem;background:#161c26;border:1px solid #1e2733;border-radius:10px;' + s + '"><div style="font-weight:600;color:#e2e8f0;margin-bottom:.5rem">' + resolve(p.title) + '</div><div style="color:#999;font-size:.8rem">' + (p.labels||[]).join(',') + ' | ' + dsStr + '</div></div>';
+    }
+  }
+  return '';
 }
 
 // ============================================
