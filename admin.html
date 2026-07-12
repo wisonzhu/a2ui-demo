@@ -1,0 +1,48 @@
+{
+  "surfaceUpdate": {
+    "components": [
+      {"id":"root","component":{"Column":{"children":{"explicitList":["header","row1","table1"]}}}},
+      
+      {"id":"header","component":{"Text":{"text":{"literalString":"Admin Dashboard"},"usageHint":"h1"}}},
+      
+      {"id":"row1","component":{"Row":{"children":{"explicitList":["stat1","stat2","stat3"]}}}},
+      {"id":"stat1","component":{"Card":{"children":{"explicitList":["sv1","sl1"]}}}},
+      {"id":"sv1","component":{"Text":{"text":{"literalString":"1,234"},"usageHint":"h1"}}},
+      {"id":"sl1","component":{"Text":{"text":{"literalString":"Total Users"}}}},
+      {"id":"stat2","component":{"Card":{"children":{"explicitList":["sv2","sl2"]}}}},
+      {"id":"sv2","component":{"Text":{"text":{"literalString":"¥52,890"},"usageHint":"h1"}}},
+      {"id":"sl2","component":{"Text":{"text":{"literalString":"Revenue"}}}},
+      {"id":"stat3","component":{"Card":{"children":{"explicitList":["sv3","sl3"]}}}},
+      {"id":"sv3","component":{"Text":{"text":{"literalString":"98.5%"},"usageHint":"h1"}}},
+      {"id":"sl3","component":{"Text":{"text":{"literalString":"Uptime"}}}},
+      
+      {"id":"table1","component":{"DataGrid":{
+        "title":{"literalString":"Users"},
+        "columns":[
+          {"header":"ID","accessor":"id","width":"60px"},
+          {"header":"Name","accessor":"name"},
+          {"header":"Email","accessor":"email"},
+          {"header":"Role","accessor":"role"},
+          {"header":"Status","accessor":"status"},
+          {"header":"Actions","type":"actions"}
+        ],
+        "rows":[
+          {"id":"1","name":"Alice Chen","email":"alice@example.com","role":"Admin","status":"Active"},
+          {"id":"2","name":"Bob Wang","email":"bob@example.com","role":"Editor","status":"Active"},
+          {"id":"3","name":"Carol Li","email":"carol@example.com","role":"Viewer","status":"Inactive"},
+          {"id":"4","name":"David Zhang","email":"david@example.com","role":"Admin","status":"Active"},
+          {"id":"5","name":"Eva Liu","email":"eva@example.com","role":"Editor","status":"Active"},
+          {"id":"6","name":"Frank Wu","email":"frank@example.com","role":"Viewer","status":"Active"},
+          {"id":"7","name":"Grace Yang","email":"grace@example.com","role":"Editor","status":"Inactive"},
+          {"id":"8","name":"Henry Zhao","email":"henry@example.com","role":"Admin","status":"Active"},
+          {"id":"9","name":"Iris Sun","email":"iris@example.com","role":"Viewer","status":"Active"},
+          {"id":"10","name":"Jack Ma","email":"jack@example.com","role":"Editor","status":"Active"},
+          {"id":"11","name":"Kate Zhou","email":"kate@example.com","role":"Admin","status":"Inactive"},
+          {"id":"12","name":"Leo Deng","email":"leo@example.com","role":"Viewer","status":"Active"}
+        ],
+        "pageSize": 5,
+        "actions": ["edit","delete","view"]
+      }}}
+    ]
+  }
+}
