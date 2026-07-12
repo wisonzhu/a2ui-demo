@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>A2UI</title>
+<style>
+*{box-sizing:border-box}body{font-family:system-ui;background:#0d1117;color:#c9d1d9;margin:0;height:100vh;display:flex}
+.p{padding:1rem;display:flex;flex-direction:column}.p:first-child{border-right:1px solid #30363d;width:380px}
+h2{color:#58a6ff;margin:0 0 .5rem}.d{color:#8b949e;font-size:.8rem;margin:0 0 .5rem}
+textarea{width:100%;background:#161b22;color:#c9d1d9;border:1px solid #30363d;border-radius:6px;padding:.5rem;font-size:.85rem;height:80px;resize:vertical}
+button{padding:.5rem 1rem;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-top:.5rem}
+button:hover{background:#2ea043}.f{flex:1;overflow-y:auto}
+.r{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1rem;margin-top:.5rem}
+.r label{display:block;margin:.4rem 0 .1rem;font-size:.8rem;color:#8b949e}
+.r input,.r select{width:100%;background:#0d1117;color:#c9d1d9;border:1px solid #30363d;border-radius:4px;padding:.4rem;margin-bottom:.3rem}
+.r table{width:100%;border-collapse:collapse;margin:.5rem 0}
+.r th{background:#1f6feb;color:#fff;padding:.4rem;text-align:left;font-size:.8rem}
+.r td{padding:.4rem;border-bottom:1px solid #30363d;font-size:.8rem}.r tr:nth-child(even) td{background:#1a1a2e}
+.r dialog{background:#161b22;color:#c9d1d9;border:1px solid #58a6ff;border-radius:12px;padding:1.5rem;max-width:450px}
+.r dialog::backdrop{background:rgba(0,0,0,.6)}
+.r button{padding:.4rem 1rem;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer;margin:.25rem}
+pre{font-size:.7rem;overflow:auto;max-height:250px;background:#0d1117;border-radius:6px;padding:.5rem}
+.s{display:none;color:#d29922}.s.on{display:block}
+</style></head><body>
+<div class="p"><h2>A2UI Desktop</h2><p class="d">DeepSeek generates UI from your description</p>
+<textarea id="t">一个用户注册表单，包含姓名、邮箱、手机号</textarea>
+<button id="b">Generate UI</button><div class="s" id="s">Generating...</div>
+<details><summary style="color:#8b949e;cursor:pointer">JSON</summary><pre id="j"></pre></details></div>
+<div class="p f"><h2>Generated UI</h2><div class="f r" id="o"><p style="color:#8b949e">Click Generate UI</p></div></div>
+<script>
+document.getElementById('b').onclick=async()=>{
+ var p=document.getElementById('t').value.trim();if(!p)return;
+ document.getElementById('s').className='s on';
+ var r=new XMLHttpRequest();
+ r.open('POST','http://localhost:3456/a2ui/generate',true);
+ r.setRequestHeader('Content-Type','application/json');
+ r.onload=function(){
+  document.getElementById('s').className='s';
+  if(r.status!==200){document.getElementById('o').innerHTML='<p style="color:#f85149">Error: '+r.status+'</p>';return}
+  var d=JSON.parse(r.responseText);
+  document.getElementById('j').textContent=JSON.stringify(d.ui,null,2);
+  R(d.ui);
+ };
+ r.send(JSON.stringify({prompt:p}));
+};
+var D={};
+function G(v){if(!v)return'';if(v.literalString)return v.literalString;if(v.path)return D[v.path.replace(/\//g,'')]||'';return''}
+function C(id){var m=W[id];if(!m)return'';for(var[t,p]of Object.entries(m)){switch(t){
+case'Text':return'<'+ (p.usageHint||'span') +' style="color:#58a6ff">'+G(p.text)+'</'+ (p.usageHint||'span') +'>';
+case'TextField':var k=(p.text?.path||'').replace(/\//g,'');return'<label>'+G(p.label)+'</label><input oninput="window._d.'+k+'=this.value" placeholder="'+G(p.label)+'">';
+case'Button':return'<button onclick="window._sub()">'+(p.child?C(p.child):'Submit')+'</button>';
+case'Card':return'<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:.75rem;margin:.5rem 0">'+L(p.children)+'</div>';
+case'Column':return'<div style="display:flex;flex-direction:column;gap:8px">'+L(p.children)+'</div>';
+case'Row':return'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+L(p.children)+'</div>';
+case'MultipleChoice':var k=(p.selections?.path||'').replace(/\//g,'');return'<label>'+G(p.label)+'</label><select onchange="window._d.'+k+'=this.value">'+(p.options||[]).map(function(o){return'<option value="'+G(o.value)+'">'+G(o.label)+'</option>'}).join('')+'</select>';
+case'Checkbox':return'<label><input type="checkbox" style="width:auto"> '+G(p.label)+'</label>';
+case'Slider':return'<label>'+G(p.label)+' <input type="range" min="'+(p.min||0)+'" max="'+(p.max||100)+'" value="'+(p.value||50)+'" style="width:100%"></label>';
+case'DateTimeInput':return'<label>'+G(p.label)+'</label><input type="datetime-local" style="color-scheme:dark">';
+case'Divider':return'<hr style="border-color:#30363d;margin:8px 0">';
+case'Table':var h='<table><thead><tr>'+(p.columns||[]).map(function(c){return'<th>'+G(c)+'</th>'}).join('')+'</tr></thead><tbody>';for(var i=0;i<(p.rows||[]).length;i++){h+='<tr>'+p.rows[i].map(function(c){return'<td>'+G(c)+'</td>'}).join('')+'</tr>'}return h+'</tbody></table>';
+case'Modal':var mid='m'+Math.random().toString(36).slice(2,6);return'<button onclick="document.getElementById(\''+mid+'\').showModal()">'+(G(p.triggerText)||'Open')+'</button><dialog id="'+mid+'"><h3 style="color:#58a6ff">'+G(p.title)+'</h3>'+(p.content?M(p.content):'')+'<br><button onclick="document.getElementById(\''+mid+'\').close()" style="margin-top:1rem">Close</button></dialog>';
+case'Chart':return'<div style="margin:1rem 0;padding:1rem;background:#0d1117;border:1px solid #30363d;border-radius:8px;text-align:center"><strong style="color:#58a6ff;display:block;margin-bottom:.5rem">'+G(p.title)+'</strong><p style="color:#8b949e;font-size:.8rem">Chart: '+(p.labels||[]).join(',')+' | Data: '+(p.datasets||[]).map(function(d){return d.label+':['+d.data.join(',')+']'}).join('; ')+'</p></div>';
+}}return''}
+function L(ch){return(ch?.explicitList||[]).map(C).join('')}
+function M(obj){if(!obj)return'';return'<div style="display:flex;flex-direction:column;gap:8px">'+L(obj)+'</div>'}
+function R(surface){
+ var comps=surface?.surfaceUpdate?.components;if(!comps){document.getElementById('o').innerHTML='<p>No components</p>';return}
+ W={};for(var i=0;i<comps.length;i++)W[comps[i].id]=comps[i].component;
+ window._d=D;window._sub=function(){var v=[];for(var k in D)if(D[k])v.push(k+':'+D[k]);document.getElementById('o').innerHTML+='<p style="color:#3fb950;margin-top:.5rem">Submitted: '+v.join(', ')+'</p>'};
+ document.getElementById('o').innerHTML=W['root']?C('root'):'<p>No root</p>';
+}
+var W={};
+</script>
+</body></html>
