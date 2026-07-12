@@ -542,41 +542,38 @@ function renderComponent(id, byId) {
       return h + '</tbody></table>';
     }
     case 'DataGrid': {
-      var gridId = 'grid' + Math.random().toString(36).slice(2,6);
-      var pageSize = p.pageSize || 10, page = 0;
-      var allRows = p.rows || [], totalPages = Math.ceil(allRows.length / pageSize);
-      var renderPage = function() {
-        var start = page * pageSize, end = start + pageSize;
-        var vis = allRows.slice(start, end);
-        return vis.map(function(rowr){return rowr;});
-      };
-      var cols = p.columns || [];
+      var cols = p.columns || [], allRows = p.rows || [];
+      var pageSize = p.pageSize || 10;
       var h = '<div style="' + s + '">';
       if (p.title) h += '<h3 style="color:#e2e8f0;margin:0 0 .5rem">' + resolve(p.title) + '</h3>';
-      if (p.searchable) h += '<input placeholder="Search..." style="margin-bottom:.5rem;width:200px">';
       h += '<table><thead><tr>';
       for (var c = 0; c < cols.length; c++) h += '<th>' + (cols[c].header||'') + '</th>';
-      h += '</tr></thead><tbody id="' + gridId + '-body'></tbody></table>';
-      h += '<div style="margin-top:.5rem;display:flex;gap:4px" id="' + gridId + '-pager">';
-      for (var pg = 0; pg < totalPages; pg++) h += '<button onclick="(function(){page=' + pg + ';document.getElementById(\\\'' + gridId + '-body\\\').innerHTML=renderPage().map(function(r){var h=\\\'<tr>\\\';var cells=Array.isArray(r)?r:(r.cells||[]);for(var i=0;i<cells.length;i++){var cell=cells[i];h+=\\\'<td>\\\'+(typeof cell===\\\'string\\\'?cell:(cell.value||\\\'\\\'))+\\\'</td>\\\'}return h+\\\'</tr>\\\';}).join(\\\'\\\');})()" style="padding:.25rem .5rem;font-size:.8rem">' + (pg+1) + '</button>';
-      h += '</div></div>';
-      return h;
+      h += '</tr></thead><tbody>';
+      for (var r = 0; r < Math.min(allRows.length, pageSize); r++) {
+        var row = allRows[r], cells = Array.isArray(row) ? row : (row.cells||[]);
+        h += '<tr>';
+        for (var i = 0; i < cells.length; i++) h += '<td>' + (typeof cells[i]==='string'?cells[i]:(cells[i].value||'')) + '</td>';
+        h += '</tr>';
+      }
+      h += '</tbody></table>';
+      if (allRows.length > pageSize) h += '<div style="margin-top:.5rem;color:#999;font-size:.8rem">Showing 1-' + pageSize + ' of ' + allRows.length + '</div>';
+      return h + '</div>';
     }
     case 'Pagination':
       return '<div style="display:flex;gap:4px;' + s + '">' + Array.from({length: p.totalPages||1}, function(_,i){return '<button style="padding:.25rem .5rem;font-size:.8rem">' + (i+1) + '</button>';}).join('') + '</div>';
     case 'Modal': {
       var mid = 'mdl' + Math.random().toString(36).slice(2,8);
-      return '<button onclick="document.getElementById(\\'' + mid + '\\').showModal()" style="' + s + '">' + (resolve(p.triggerText) || 'Open') + '</button>' +
+      return '<button data-modal="' + mid + '" style="' + s + '">' + (resolve(p.triggerText) || 'Open') + '</button>' +
         '<dialog id="' + mid + '"><h3 style="color:#e2e8f0;margin-bottom:1rem">' + resolve(p.title) + '</h3>' +
         (p.content ? renderKids(p.content, byId) : '') +
-        '<br><button onclick="document.getElementById(\\'' + mid + '\\').close()" style="margin-top:1rem">Close</button></dialog>';
+        '<br><button data-close="' + mid + '" style="margin-top:1rem">Close</button></dialog>';
     }
     case 'Tabs': {
       var tid = 'tab' + Math.random().toString(36).slice(2,6);
       var tabs = p.tabs || [], contents = p.contents || [];
       var bar = '<div style="display:flex;gap:4px;margin-bottom:.75rem;' + s + '">';
       for (var ti = 0; ti < tabs.length; ti++)
-        bar += '<button class="btn btn-ghost btn-sm" onclick="(function(){var ds=document.querySelectorAll(\\\'[data-tabs=' + tid + ']\\\');for(var j=0;j<ds.length;j++)ds[j].style.display=j===' + ti + '?\\\'block\\\':\\\'none\\\'})()">' + resolve(tabs[ti]) + '</button>';
+        bar += '<button class="btn btn-ghost btn-sm" data-tab="' + tid + '" data-idx="' + ti + '">' + resolve(tabs[ti]) + '</button>';
       bar += '</div><div>';
       for (var ci = 0; ci < contents.length; ci++)
         bar += '<div data-tabs="' + tid + '" style="display:' + (ci===0?'block':'none') + '">' + renderKids(contents[ci], byId) + '</div>';
@@ -585,9 +582,9 @@ function renderComponent(id, byId) {
     case 'Drawer': {
       var did = 'drw' + Math.random().toString(36).slice(2,6);
       var pos = p.placement === 'left' ? 'left:0' : 'right:0';
-      return '<button onclick="document.getElementById(\\'' + did + '\\').classList.toggle(\\\'open\\\')" style="' + s + '">' + (resolve(p.triggerText) || 'Open') + '</button>' +
+      return '<button data-drawer="' + did + '" style="' + s + '">' + (resolve(p.triggerText) || 'Open') + '</button>' +
         '<div id="' + did + '" style="position:fixed;top:0;' + pos + ';width:320px;height:100%;background:#12171f;box-shadow:0 0 20px rgba(0,0,0,.5);z-index:999;transform:translateX(' + (p.placement==='left'?'-100%':'100%') + ');transition:transform .3s;padding:1.5rem;overflow-y:auto">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><h3 style="color:#e2e8f0">' + resolve(p.title) + '</h3><button onclick="this.parentElement.parentElement.classList.remove(\\\'open\\\')" style="background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer">✕</button></div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><h3 style="color:#e2e8f0">' + resolve(p.title) + '</h3><button data-close-drawer="' + did + '" style="background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer">✕</button></div>' +
         (p.children ? renderKids(p.children, byId) : '') + '</div>' +
         '<style>#' + did + '.open{transform:translateX(0)!important}</style>';
     }
@@ -597,13 +594,14 @@ function renderComponent(id, byId) {
         var out = '';
         for (var i = 0; i < items.length; i++) {
           var it = items[i];
-          out += '<div style="padding:.5rem 1rem;cursor:pointer;border-radius:6px;transition:background .2s" onmouseover="this.style.background=\\'rgba(59,130,246,.15)\\'" onmouseout="this.style.background=\\'transparent\\'">' + (it.icon||'') + ' ' + resolve(it.label);
+          out += '<div class="menu-item">' + (it.icon||'') + ' ' + resolve(it.label);
           if (it.children) out += '<div>' + renderMenuItem(it.children) + '</div>';
           out += '</div>';
         }
         return out;
       };
-      return h + renderMenuItem(p.items || []) + '</div>';
+      return h + renderMenuItem(p.items || []) + '</div>' +
+        '<style>.menu-item{padding:.5rem 1rem;cursor:pointer;border-radius:6px;transition:background .2s}.menu-item:hover{background:rgba(59,130,246,.15)}</style>';
     }
     case 'Breadcrumb':
       return '<div style="display:flex;gap:4px;align-items:center;color:#999;font-size:.85rem;' + s + '">' + (p.items||[]).map(function(it,i){return '<span>' + (i>0?' / ':'') + resolve(it.label) + '</span>';}).join('') + '</div>';
@@ -706,5 +704,23 @@ function generate() {
 
   xhr.send(JSON.stringify({ prompt: prompt }));
 }
+
+// Event delegation for dynamic components
+document.addEventListener('click', function(e) {
+  var t = e.target.closest('[data-modal]');
+  if (t) { document.getElementById(t.dataset.modal).showModal(); return; }
+  t = e.target.closest('[data-close]');
+  if (t) { document.getElementById(t.dataset.close).close(); return; }
+  t = e.target.closest('[data-drawer]');
+  if (t) { document.getElementById(t.dataset.drawer).classList.toggle('open'); return; }
+  t = e.target.closest('[data-close-drawer]');
+  if (t) { document.getElementById(t.dataset.closeDrawer).classList.remove('open'); return; }
+  t = e.target.closest('[data-tab]');
+  if (t) {
+    var tid=t.dataset.tab, idx=parseInt(t.dataset.idx);
+    document.querySelectorAll('[data-tabs='+tid+']').forEach(function(d,i){d.style.display=i===idx?'block':'none'});
+    return;
+  }
+});
 </script>
 </body></html>
