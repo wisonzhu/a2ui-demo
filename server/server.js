@@ -6,6 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import os from 'node:os';
 
+// MUST be first — kill proxy before any fetch initialization
+['http_proxy','https_proxy','HTTP_PROXY','HTTPS_PROXY','all_proxy','ALL_PROXY'].forEach(k => delete process.env[k]);
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const tmpDir = join(__dirname, '..', '.tmp');
 if (!existsSync(tmpDir)) mkdirSync(tmpDir, { recursive: true });
@@ -285,9 +288,6 @@ plt.savefig("` + pngFile + `", dpi=100, bbox_inches='tight', facecolor='#0d1117'
 }
 
 const server = http.createServer(async (req, res) => {
-  // Clear proxy env vars (may be set by system)
-  ['http_proxy','https_proxy','HTTP_PROXY','HTTPS_PROXY','all_proxy','ALL_PROXY'].forEach(k => delete process.env[k]);
-
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
