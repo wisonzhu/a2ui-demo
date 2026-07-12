@@ -83,7 +83,7 @@ DateTimeInput: component="DateTimeInput", value:{path:"/..."}, enableDate, enabl
 
 TABLE EXAMPLE: {"id":"t1","component":{"Table":{"columns":["Name","Age"],"rows":[["Alice","25"]]}}}
 CHART EXAMPLE: {"id":"c1","component":{"Chart":{"chartType":"bar","title":{"literalString":"Sales"},"labels":["Q1","Q2"],"datasets":[{"label":"2024","data":[100,200]}]}}}
-CUSTOM: Table(columns+rows), Chart(chartType+title+labels+datasets+imageBase64), Tag(text+type), StatCard(value+label+icon+trend), Badge(value+child), Progress(percent)
+CUSTOM: Table(columns+rows), Chart(chartType+title+labels+datasets+imageBase64), Tag(text+type), StatCard(value+label+icon+trend), Badge(value+child), Progress(percent), Workflow(nodes:[{title,status}]), ApprovalFlow(steps:[{name,role,status,time}]), ProcessStep(items:[{title,status}])
 
 Every component MUST have "id" and "component" fields. Output ONLY valid JSON, no markdown.`;
 
