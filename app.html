@@ -524,7 +524,7 @@ function renderComponent(id, byId) {
       return '<label style="display:block;' + s + '">' + resolve(p.label) + '</label><input type="file"' + (p.multiple ? ' multiple' : '') + (p.accept ? ' accept="' + p.accept + '"' : '') + '>';
     case 'Table': {
       var cols = p.columns || [], rows = p.rows || [];
-      var h = '<table style="' + s + '"><thead><tr>';
+      var h = '<table><thead><tr>';
       for (var c = 0; c < cols.length; c++) {
         var col = cols[c];
         h += '<th>' + (typeof col === 'string' ? col : resolve(col.header || col)) + '</th>';
@@ -542,22 +542,70 @@ function renderComponent(id, byId) {
       return h + '</tbody></table>';
     }
     case 'DataGrid': {
+      var gid = 'g' + Math.random().toString(36).slice(2,6);
       var cols = p.columns || [], allRows = p.rows || [];
       var pageSize = p.pageSize || 10;
-      var h = '<div style="' + s + '">';
-      if (p.title) h += '<h3 style="color:#e2e8f0;margin:0 0 .5rem">' + resolve(p.title) + '</h3>';
-      h += '<table><thead><tr>';
-      for (var c = 0; c < cols.length; c++) h += '<th>' + (cols[c].header||'') + '</th>';
-      h += '</tr></thead><tbody>';
-      for (var r = 0; r < Math.min(allRows.length, pageSize); r++) {
-        var row = allRows[r], cells = Array.isArray(row) ? row : (row.cells||[]);
-        h += '<tr>';
-        for (var i = 0; i < cells.length; i++) h += '<td>' + (typeof cells[i]==='string'?cells[i]:(cells[i].value||'')) + '</td>';
-        h += '</tr>';
+      var actions = p.actions || [];
+      // Store data globally
+      window['_dg_' + gid] = { rows: allRows, pageSize: pageSize, cols: cols, actions: actions, page: 0, filter: '' };
+      
+      function dgRenderTable(gid) {
+        var d = window['_dg_' + gid];
+        var cols = d.cols, rows = d.rows, page = d.page, ps = d.pageSize, filter = d.filter.toLowerCase();
+        var filtered = filter ? rows.filter(function(r){
+          var cells = Array.isArray(r) ? r : (r.cells||[]);
+          return cells.some(function(c){ return (typeof c==='string'?c:(c.value||'')).toLowerCase().indexOf(filter)>=0; });
+        }) : rows;
+        var total = filtered.length, totalPages = Math.max(1, Math.ceil(total / ps));
+        if (page >= totalPages) page = d.page = totalPages - 1;
+        var start = page * ps, end = Math.min(start + ps, total);
+        var vis = filtered.slice(start, end);
+        
+        var h = '<thead><tr>';
+        for (var c = 0; c < cols.length; c++) h += '<th>' + (cols[c].header || cols[c]) + '</th>';
+        if (actions.length) h += '<th style="width:120px">Actions</th>';
+        h += '</tr></thead><tbody>';
+        
+        for (var r = 0; r < vis.length; r++) {
+          var row = vis[r], cells = Array.isArray(row) ? row : (row.cells||[]);
+          h += '<tr>';
+          for (var i = 0; i < cells.length; i++) {
+            h += '<td>' + (typeof cells[i]==='string' ? cells[i] : (cells[i].value||'')) + '</td>';
+          }
+          if (actions.length) {
+            h += '<td style="display:flex;gap:4px">';
+            for (var a = 0; a < actions.length; a++) {
+              var act = actions[a];
+              h += '<button data-dg="' + gid + '" data-action="' + act + '" data-row="' + (start + r) + '" style="padding:2px 8px;font-size:.7rem;border-radius:4px;cursor:pointer;' + (act==='delete'?'background:rgba(239,68,68,.2);color:#ef4444;border:1px solid rgba(239,68,68,.3)':act==='edit'?'background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid rgba(59,130,246,.3)':'background:rgba(34,197,94,.2);color:#22c55e;border:1px solid rgba(34,197,94,.3)') + '">' + act + '</button>';
+            }
+            h += '</td>';
+          }
+          h += '</tr>';
+        }
+        h += '</tbody>';
+        
+        // Paginator
+        h += '<tfoot><tr><td colspan="' + (cols.length + (actions.length?1:0)) + '">';
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;font-size:.8rem;color:#999">';
+        h += '<span>Showing ' + (start+1) + '-' + end + ' of ' + total + '</span>';
+        h += '<div style="display:flex;gap:2px">';
+        h += '<button data-dg="' + gid + '" data-page="prev" ' + (page<=0?'disabled':'') + ' style="padding:3px 8px;font-size:.75rem">◀</button>';
+        for (var pg = 0; pg < totalPages; pg++) {
+          h += '<button data-dg="' + gid + '" data-page="' + pg + '" style="padding:3px 8px;font-size:.75rem;' + (pg===page?'background:#3b82f6;color:#fff':'') + '">' + (pg+1) + '</button>';
+        }
+        h += '<button data-dg="' + gid + '" data-page="next" ' + (page>=totalPages-1?'disabled':'') + ' style="padding:3px 8px;font-size:.75rem">▶</button>';
+        h += '</div></div></td></tr></tfoot>';
+        
+        document.getElementById(gid + '-table').innerHTML = h;
       }
-      h += '</tbody></table>';
-      if (allRows.length > pageSize) h += '<div style="margin-top:.5rem;color:#999;font-size:.8rem">Showing 1-' + pageSize + ' of ' + allRows.length + '</div>';
-      return h + '</div>';
+      
+      var h = '<div style="' + s + '">';
+      if (p.title) h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem"><h3 style="color:#e2e8f0;margin:0">' + resolve(p.title) + '</h3><button data-dg="' + gid + '" data-action="create" style="padding:4px 12px;background:#22c55e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.8rem">+ New</button></div>';
+      h += '<input placeholder="Search..." data-dg-search="' + gid + '" style="margin-bottom:.5rem;width:100%;max-width:300px;padding:.4rem .6rem;background:#0f141c;border:1px solid #1e2733;border-radius:6px;color:#b8c5d6;font-size:.8rem">';
+      h += '<table id="' + gid + '-table"></table></div>';
+      
+      setTimeout(function(){ dgRenderTable(gid); }, 10);
+      return h;
     }
     case 'Pagination':
       return '<div style="display:flex;gap:4px;' + s + '">' + Array.from({length: p.totalPages||1}, function(_,i){return '<button style="padding:.25rem .5rem;font-size:.8rem">' + (i+1) + '</button>';}).join('') + '</div>';
@@ -720,6 +768,27 @@ document.addEventListener('click', function(e) {
     var tid=t.dataset.tab, idx=parseInt(t.dataset.idx);
     document.querySelectorAll('[data-tabs='+tid+']').forEach(function(d,i){d.style.display=i===idx?'block':'none'});
     return;
+  }
+  // DataGrid actions
+  t = e.target.closest('[data-dg]');
+  if (t) {
+    var gid = t.dataset.dg, d = window['_dg_' + gid];
+    if (!d) return;
+    var action = t.dataset.action;
+    if (action === 'prev') { d.page = Math.max(0, d.page - 1); dgRenderTable(gid); }
+    else if (action === 'next') { d.page = Math.min(Math.ceil(d.rows.length/d.pageSize)-1, d.page + 1); dgRenderTable(gid); }
+    else if (action === 'delete') { d.rows.splice(parseInt(t.dataset.row), 1); dgRenderTable(gid); }
+    else if (action === 'create') { d.rows.unshift(['New', 'Item']); dgRenderTable(gid); }
+    else if (t.dataset.page !== undefined) { d.page = parseInt(t.dataset.page); dgRenderTable(gid); }
+    return;
+  }
+});
+// DataGrid search
+document.addEventListener('input', function(e) {
+  var t = e.target.closest('[data-dg-search]');
+  if (t) {
+    var d = window['_dg_' + t.dataset.dgSearch];
+    if (d) { d.filter = t.value; d.page = 0; dgRenderTable(t.dataset.dgSearch); }
   }
 });
 </script>
