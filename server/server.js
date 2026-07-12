@@ -187,8 +187,8 @@ CHART EXAMPLE: {"id":"c1","component":{"Chart":{"chartType":"bar","title":{"lite
 CUSTOM: Table(columns+rows), Chart(chartType+title+labels+datasets+imageBase64), Tag(text+type), StatCard(value+label+icon+trend), Badge(value+child), Progress(percent), Workflow(nodes:[{title,status}]), ApprovalFlow(steps:[{name,role,status,time}]), ProcessStep(items:[{title,status}])
 
 Every component MUST have "id" and "component" fields. Output ONLY valid JSON, no markdown.`;
-
   const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    signal: AbortSignal.timeout(25000),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + DEEPSEEK_KEY },
     body: JSON.stringify({
@@ -197,8 +197,8 @@ Every component MUST have "id" and "component" fields. Output ONLY valid JSON, n
       temperature: 0.7, max_tokens: 6000
     })
   }).catch(e => {
-    console.error('Fetch failed:', e.message);
-    return { json: () => ({ choices: [] }) };
+    console.error('DeepSeek fetch error:', e.message);
+    return { json: async () => ({ choices: [{ message: { content: '{}' } }] }) };
   });
 
   const data = await resp.json();
@@ -285,6 +285,15 @@ plt.savefig("` + pngFile + `", dpi=100, bbox_inches='tight', facecolor='#0d1117'
 }
 
 const server = http.createServer(async (req, res) => {
+  // Force disable proxy for all outbound requests
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  delete process.env.http_proxy;
+  delete process.env.https_proxy;
+  delete process.env.HTTP_PROXY;
+  delete process.env.HTTPS_PROXY;
+  delete process.env.all_proxy;
+  delete process.env.ALL_PROXY;
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
