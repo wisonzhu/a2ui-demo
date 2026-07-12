@@ -63,7 +63,27 @@ TABLE EXAMPLE:
 DATAGRID EXAMPLE:
 {"id":"dg1","component":{"DataGrid":{"title":{"literalString":"Users"},"columns":[{"header":"Name","accessor":"name"},{"header":"Age","accessor":"age"}],"rows":[["Alice","25"],["Bob","30"]],"pageSize":10}}}
 
-All components: Text(Text+h1+h2), TextField(label+text:path), Button(child+action), MultipleChoice(label+options), Checkbox(label), Slider(label+min+max+value), DateTimeInput(label+value:path), Column(children:explicitList), Row(children:explicitList), Card(children:explicitList), Table(columns+rows), List(items:[component...]), Image(url+alt), Icon(name), Tag(text+type:success|warning|danger|info), Badge(value+child), Progress(percent), StatCard(value+label+icon+trend:up|down+color), Breadcrumb(items:[{label}]), Steps(items:[{title+status}]+current), Modal(triggerText+title+content), Tabs(tabs+contents), Chart(chartType+title+labels+datasets+imageBase64), Divider
+Official A2UI v0.9 components (use EXACT property names):
+Text: component="Text", text, variant=h1|h2|h3|h4|h5|caption|body
+TextField: component="TextField", label, value:{path:"/name"}, variant=short|long|password|number|email
+Button: component="Button", child, variant, action
+Card: component="Card", child (SINGLE component id!)
+Row: component="Row", children:{explicitList:[...]}, justify, align
+Column: component="Column", children:{explicitList:[...]}, justify, align
+List: component="List", children:{explicitList:[...]}, direction
+Image: component="Image", url, description(alt), fit
+Icon: component="Icon", name
+Tabs: component="Tabs", tabs:[{title, child}]  ← ONE array!
+Modal: component="Modal", trigger(component id), content(component id)  ← NOT triggerText!
+Divider: component="Divider", axis=horizontal|vertical
+CheckBox: component="CheckBox", label, value:{path:"/..."}
+ChoicePicker: component="ChoicePicker", label, options:[{label,value}], value:{path:"/..."}, displayStyle
+Slider: component="Slider", label, min, max, value
+DateTimeInput: component="DateTimeInput", value:{path:"/..."}, enableDate, enableTime, label
+
+TABLE EXAMPLE: {"id":"t1","component":{"Table":{"columns":["Name","Age"],"rows":[["Alice","25"]]}}}
+CHART EXAMPLE: {"id":"c1","component":{"Chart":{"chartType":"bar","title":{"literalString":"Sales"},"labels":["Q1","Q2"],"datasets":[{"label":"2024","data":[100,200]}]}}}
+CUSTOM: Table(columns+rows), Chart(chartType+title+labels+datasets+imageBase64), Tag(text+type), StatCard(value+label+icon+trend), Badge(value+child), Progress(percent)
 
 Every component MUST have "id" and "component" fields. Output ONLY valid JSON, no markdown.`;
 
