@@ -531,8 +531,10 @@ function renderComponent(id, byId) {
           // Flat array: [{"literalString":"Alice"}, ...]
           for (var c2 = 0; c2 < row.length; c2++) h += '<td>' + resolve(row[c2]) + '</td>';
         } else if (row.cells) {
-          // Cells format: {cells: [{"value":"Alice"}, ...]}
-          for (var c2 = 0; c2 < row.cells.length; c2++) h += '<td>' + resolve(row.cells[c2].value || row.cells[c2]) + '</td>';
+          for (var c2 = 0; c2 < row.cells.length; c2++) {
+            var cell = row.cells[c2];
+            h += '<td>' + (typeof cell === 'string' ? cell : resolve(cell.value || cell)) + '</td>';
+          }
         }
         h += '</tr>';
       }
