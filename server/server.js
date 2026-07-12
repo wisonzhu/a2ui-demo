@@ -100,9 +100,10 @@ Every component MUST have "id" and "component" fields. Output ONLY valid JSON, n
   const data = await resp.json();
   const text = data.choices?.[0]?.message?.content || '{}';
   const cleaned = text.replace(/```json|```/g, '').trim();
+  console.error('DEEPSEEK raw:', cleaned.slice(0, 100));
   let ui;
-  try { ui = JSON.parse(cleaned); }
-  catch {
+  try { ui = JSON.parse(cleaned); console.error('PARSED OK:', Object.keys(ui).join(',')); }
+  catch (e) {
     const match = cleaned.match(/\{[\s\S]*\}/);
     if (match) try { ui = JSON.parse(match[0]); } catch { ui = {}; }
     else ui = {};
