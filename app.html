@@ -582,6 +582,15 @@ function renderComponent(id, byId) {
   return '';
 }
 
+function handleSubmit() {
+  var el = document.getElementById('render');
+  var parts = [];
+  for (var k in formData) if (formData[k]) parts.push(k + '=' + formData[k]);
+  if (parts.length) el.insertAdjacentHTML('beforeend', '<div class="success-msg" style="display:none" id="submsg">✅ ' + parts.join(', ') + '</div>');
+  var m = document.getElementById('submsg');
+  if (m) m.style.display = 'block';
+}
+
 function styleStr(s) {
   if (!s) return '';
   var css = '';
