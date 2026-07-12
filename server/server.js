@@ -63,16 +63,7 @@ TABLE EXAMPLE:
 DATAGRID EXAMPLE:
 {"id":"dg1","component":{"DataGrid":{"title":{"literalString":"Users"},"columns":[{"header":"Name","accessor":"name"},{"header":"Age","accessor":"age"}],"rows":[["Alice","25"],["Bob","30"]],"pageSize":10}}}
 
-All available components (MUST include style where relevant for appearance):
-FORM: TextField(label+text:path+style:{backgroundColor,borderColor,...}), Button(child+action:{name:"submit"}+style:{backgroundColor,color,...}), MultipleChoice(label+options:[{value,label}]+style), Checkbox(label+style), Switch(label+checked+style), Slider(label+min+max+value+style), DateTimePicker(label+path+style), Rate(label+max+value+style), FileUpload(label+accept+multiple+style)
-DATA: Table(columns+rows+style), DataGrid(title+columns+rows+pageSize+actions+style), Pagination(currentPage+totalPages+style)
-LAYOUT: Column(children:explicitList+style:{gap,backgroundColor,padding,...}), Row(children:explicitList+style:{gap,alignItems,...}), Card(children:explicitList+style:{backgroundColor,borderRadius,padding,...}), Divider(style)
-NAV: Menu(items:[{label+icon+children}]+mode+style), Breadcrumb(items:[{label+path}]+style), Steps(items:[{title+description+status}]+current+style)
-FEEDBACK: Modal(triggerText+title+content:explicitList+style), Drawer(triggerText+title+children:explicitList+placement+style), Message(type+content+style), Notification(title+content+type+style)
-DISPLAY: Tag(text+type+style), Badge(value+child+style), Progress(percent+type+status+style), StatCard(value+label+icon+trend+color+style), Accordion(items:[{title+content}]+style), Timeline(items:[{time+content+type}]+style)
-CHART: Chart(chartType+title+labels+datasets+imageBase64+style)
-MISC: Text(text+usageHint+style:{color,fontSize,fontWeight,...}), Image(url+alt+width+height+style)
-ROOT: root component MUST include theme:{backgroundColor,textColor,primaryColor,cardBackground} and all components SHOULD include style objects describing their appearance
+All components: Text(Text+h1+h2), TextField(label+text:path), Button(child+action), MultipleChoice(label+options), Checkbox(label), Slider(label+min+max+value), DateTimeInput(label+value:path), Column(children:explicitList), Row(children:explicitList), Card(children:explicitList), Table(columns+rows), List(items:[component...]), Image(url+alt), Icon(name), Tag(text+type:success|warning|danger|info), Badge(value+child), Progress(percent), StatCard(value+label+icon+trend:up|down+color), Breadcrumb(items:[{label}]), Steps(items:[{title+status}]+current), Modal(triggerText+title+content), Tabs(tabs+contents), Chart(chartType+title+labels+datasets+imageBase64), Divider
 
 Every component MUST have "id" and "component" fields. Output ONLY valid JSON, no markdown.`;
 
