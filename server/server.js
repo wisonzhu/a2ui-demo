@@ -197,7 +197,7 @@ Every component MUST have "id" and "component" fields. Output ONLY valid JSON, n
     body: JSON.stringify({
       model: 'deepseek-chat',
       messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
-      temperature: 0.7, max_tokens: 6000
+      temperature: 0.7, max_tokens: 16000
     })
   }).catch(e => {
     console.error('DeepSeek fetch error:', e.message);
