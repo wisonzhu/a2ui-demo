@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
+import os from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const tmpDir = join(__dirname, '..', '.tmp');
@@ -51,6 +52,54 @@ async function* aguiStream(prompt) {
   yield { type: 'RUN_FINISHED', runId: '...' };
 }
 
+async function fetchRealData(source) {
+  const { execSync } = await import('node:child_process');
+  
+  // System: local machine stats
+  if (source === 'system') {
+    const cpu = parseFloat(execSync("top -l 1 -n 0 | grep 'CPU usage' | awk '{print $3}' | sed 's/%//'", {encoding:'utf8'}).trim()) || 30;
+    const mem = execSync("vm_stat | awk '/Pages active/ {a=$NF} /Pages wired/ {w=$NF} END {printf \"%.0f\", (a+w)*4096/1024/1024/1024/'" + (require('os').totalmem()/1024/1024/1024).toFixed(1) + "*100}", {encoding:'utf8'}).trim();
+    const disk = execSync("df -h / | tail -1 | awk '{print $5}' | sed 's/%//'", {encoding:'utf8'}).trim();
+    const uptime = execSync("uptime | awk -F'up ' '{print $2}' | awk -F',' '{print $1}'", {encoding:'utf8'}).trim();
+    return `CPU: ${cpu}%, Memory: ${mem}%, Disk: ${disk}%, Uptime: ${uptime}`;
+  }
+  
+  // K8s: pod/node count (if kubectl available)
+  if (source === 'k8s') {
+    try {
+      const pods = execSync("kubectl get pods --all-namespaces --no-headers 2>/dev/null | wc -l", {encoding:'utf8'}).trim();
+      const nodes = execSync("kubectl get nodes --no-headers 2>/dev/null | wc -l", {encoding:'utf8'}).trim();
+      const top = execSync("kubectl top nodes --no-headers 2>/dev/null | head -5", {encoding:'utf8'}).trim();
+      return `Pods: ${pods}, Nodes: ${nodes}\nNode usage:\n${top}`;
+    } catch(e) { return 'K8s not available: '+e.message; }
+  }
+  
+  // Docker: container list
+  if (source === 'docker') {
+    try {
+      const containers = execSync("docker ps --format '{{.Names}} {{.Status}}' --no-trunc 2>/dev/null | head -10", {encoding:'utf8'}).trim();
+      return `Running containers:\n${containers}`;
+    } catch(e) { return 'Docker not available'; }
+  }
+  
+  // Git: recent commits
+  if (source === 'git') {
+    try {
+      const log = execSync("git log --oneline -10 2>/dev/null", {encoding:'utf8'}).trim();
+      return `Recent commits:\n${log}`;
+    } catch(e) { return 'No git repo'; }
+  }
+  
+  // Nginx: access stats
+  if (source === 'nginx') {
+    try {
+      const stats = execSync("tail -1000 /usr/local/var/log/nginx/access.log 2>/dev/null | awk '{print $9}' | sort | uniq -c | sort -rn", {encoding:'utf8'}).trim();
+      return `Nginx response codes:\n${stats}`;
+    } catch(e) { return 'Nginx logs not found at default path'; }
+  }
+  
+  return `Unknown data source: ${source}`;
+}
 async function a2uiGen(prompt) {
   const system = `You are an A2UI generator. Output ONLY a JSON object.
 
@@ -212,11 +261,56 @@ const server = http.createServer(async (req, res) => {
     req.on('data', c => body += c);
     req.on('end', async () => {
       try {
-        const { prompt } = JSON.parse(body);
-        const ui = await a2uiGen(prompt);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, ui }));
-      } catch (e) { res.end(JSON.stringify({ success: false, error: e.message })); }
+        const { prompt, dataSource } = JSON.parse(body);
+        
+        // Fetch real data if dataSource specified
+        let realData = '';
+        if (dataSource) {
+          try { realData = await fetchRealData(dataSource); } catch(e) { realData = 'Error: '+e.message; }
+        }
+        
+        const fullPrompt = realData ? `真实数据:\n${realData}\n\n用户需求:\n${prompt}` : prompt;
+        const ui = await a2uiGen(fullPrompt);
+        res.writeHead(200, {'Content-Type':'application/json'});
+        res.end(JSON.stringify({ success:true, ui }));
+      } catch (e) { res.end(JSON.stringify({ error: e.message })); }
+    });
+    return;
+  }
+
+  // Handle form actions: submit data → get next A2UI
+  if (url.pathname === '/a2ui/action' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { action, data, context } = JSON.parse(body);
+        let nextUI;
+        
+        // Scene 1: Register → Welcome
+        if (action === 'submit' && context.form === 'register') {
+          nextUI = await a2uiGen('显示注册成功页面，欢迎用户 '+(data.name||'用户')+'，注册邮箱为 '+(data.email||''));
+        }
+        // Scene 2: Login → Dashboard  
+        else if (action === 'submit' && context.form === 'login') {
+          nextUI = await a2uiGen('登录成功后显示dashboard，包含统计卡片：用户数1234、订单567、收入89000');
+        }
+        // Scene 3: Leave Apply → Approval Flow
+        else if (action === 'submit' && context.form === 'leave') {
+          nextUI = await a2uiGen('请假申请已提交！显示审批流进度：提交申请(已完成)、部门主管审批(进行中)、HR确认(待处理)。申请人：'+(data.name||'')+'，请假'+(data.days||'')+'天');
+        }
+        // Scene 4: Feedback → Thanks
+        else if (action === 'submit' && context.form === 'feedback') {
+          nextUI = await a2uiGen('反馈提交成功！感谢您的反馈，显示一个Alert成功提示，反馈类型是'+(data.type||''));
+        }
+        // Generic: any submit → summary
+        else {
+          nextUI = await a2uiGen('显示提交成功的确认页面，已提交的数据：'+JSON.stringify(data));
+        }
+        
+        res.writeHead(200, {'Content-Type':'application/json'});
+        res.end(JSON.stringify({ success:true, ui: nextUI }));
+      } catch (e) { res.end(JSON.stringify({ error: e.message })); }
     });
     return;
   }
