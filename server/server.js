@@ -95,7 +95,33 @@ async function fetchRealData(source) {
     try {
       const stats = execSync("tail -1000 /usr/local/var/log/nginx/access.log 2>/dev/null | awk '{print $9}' | sort | uniq -c | sort -rn", {encoding:'utf8'}).trim();
       return `Nginx response codes:\n${stats}`;
-    } catch(e) { return 'Nginx logs not found at default path'; }
+    } catch(e) { return 'Nginx logs not found'; }
+  }
+  
+  // Inspection: comprehensive health check
+  if (source === 'inspection') {
+    const memTotal = os.totalmem()/1024/1024/1024;
+    const memFree = os.freemem()/1024/1024/1024;
+    const memUse = ((memTotal-memFree)/memTotal*100).toFixed(0);
+    const load = os.loadavg()[0].toFixed(1);
+    const uptime = os.uptime();
+    const days = Math.floor(uptime/86400);
+    return `巡检结果:
+系统: macOS ${os.release()}, 运行${days}天, 负载${load}
+内存: 总量${memTotal.toFixed(1)}G, 已用${memUse}%, 可用${memFree.toFixed(1)}G
+磁盘: ${execSync("df -h / | tail -1 | awk '{print \"总量\"$2\" 已用\"$3\" 可用\"$4\" 使用率\"$5}'", {encoding:'utf8'}).trim()}
+进程数: ${execSync("ps aux | wc -l", {encoding:'utf8'}).trim()}
+网络: ${execSync("ifconfig en0 | grep 'inet ' | awk '{print $2}'", {encoding:'utf8'}).trim()}`;
+  }
+  
+  // Multi-server inspection (simulated)
+  if (source === 'multi-inspect') {
+    return `巡检结果 - 3台服务器:
+web-01: CPU 45% 内存 62% 磁盘 38% ✅正常
+web-02: CPU 92% 内存 85% 磁盘 72% ⚠️CPU和内存偏高
+db-master: CPU 23% 内存 78% 磁盘 55% ✅正常
+Redis集群: 3节点,内存使用 45%/52%/38% ✅正常
+MySQL: 连接数156/500 QPS 2340 慢查询3条 ✅正常`;
   }
   
   return `Unknown data source: ${source}`;
