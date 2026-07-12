@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AG-UI Demo</title>
+<style>
+  body { font-family: system-ui; max-width: 600px; margin: 2rem auto; background: #111; color: #eee; }
+  .msg { padding: 0.5rem; margin: 0.25rem 0; border-radius: 8px; }
+  .user { background: #1a508b; text-align: right; }
+  .agent { background: #1b3a1b; }
+  textarea { width: 100%; height: 60px; background: #222; color: #eee; border: 1px solid #555; border-radius: 8px; padding: 0.5rem; }
+  button { padding: 0.5rem 1.5rem; background: #0f3460; color: #eee; border: none; border-radius: 8px; cursor: pointer; }
+  .info { font-size: 0.8rem; color: #888; }
+</style>
+</head>
+<body>
+<h1>AG-UI Protocol Demo</h1>
+<p class="info">@ag-ui/client v0.0.57 — Agent-User Interaction Protocol</p>
+<div id="chat"></div>
+<textarea id="input" placeholder="Type a message..."></textarea>
+<button id="send">Send</button>
+<script type="module">
+import { createClient } from './node_modules/@ag-ui/client/dist/index.js';
+
+const chat = document.getElementById('chat');
+function add(msg, role) {
+  const d = document.createElement('div');
+  d.className = `msg ${role}`;
+  d.textContent = msg;
+  chat.appendChild(d);
+}
+
+// Simulated agent — echoes back with AG-UI event structure
+class DemoAgent {
+  async *run(input) {
+    yield { type: 'TEXT_MESSAGE_START', messageId: '1', role: 'assistant' };
+    yield { type: 'TEXT_MESSAGE_CONTENT', messageId: '1', delta: `AG-UI received: "${input}". ` };
+    yield { type: 'TEXT_MESSAGE_CONTENT', messageId: '1', delta: `Protocol events: TEXT_MESSAGE_START → CONTENT → END. ` };
+    yield { type: 'TEXT_MESSAGE_CONTENT', messageId: '1', delta: `Time: ${new Date().toLocaleTimeString()}` };
+    yield { type: 'TEXT_MESSAGE_END', messageId: '1' };
+  }
+}
+
+document.getElementById('send').onclick = async () => {
+  const input = document.getElementById('input');
+  const text = input.value.trim();
+  if (!text) return;
+  add(text, 'user');
+  input.value = '';
+
+  const agent = new DemoAgent();
+  let full = '';
+  const msgDiv = document.createElement('div');
+  msgDiv.className = 'msg agent';
+  chat.appendChild(msgDiv);
+
+  for await (const event of agent.run(text)) {
+    if (event.type === 'TEXT_MESSAGE_CONTENT') {
+      full += event.delta;
+      msgDiv.textContent = full;
+    }
+  }
+  chat.scrollTop = chat.scrollHeight;
+};
+</script>
+</body>
+</html>

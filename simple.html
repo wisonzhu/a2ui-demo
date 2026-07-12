@@ -1,0 +1,29 @@
+<html><head><meta charset="UTF-8"></head>
+<body style="background:#111;color:#eee;font-family:system-ui;padding:2rem">
+<input id="p" value="一个登录表单" style="width:300px;padding:8px">
+<button id="b">生成</button>
+<div id="r"></div>
+<script>
+document.getElementById('b').onclick=async function(){
+ var p=document.getElementById('p').value;
+ var resp=await fetch('/a2ui/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p})});
+ var d=await resp.json();
+ var h='<hr>RAW JSON:<br><pre>'+JSON.stringify(d.ui,null,2)+'</pre>';
+ h+='<hr>RENDERED:<br>';
+ var comps=d.ui.surfaceUpdate.components;
+ var m={};for(var i=0;i<comps.length;i++)m[comps[i].id]=comps[i].component;
+ h+=e('root',m);
+ document.getElementById('r').innerHTML=h;
+};
+function v(x){if(!x)return'';if(x.literalString)return x.literalString;if(x.path)return'';return''}
+function e(id,m){var c=m[id];if(!c)return'';
+ for(var t in c){var p=c[t];
+  if(t=='Text')return'<span>'+v(p.text)+'</span>';
+  if(t=='TextField')return'<div><label>'+v(p.label)+'</label><br><input></div>';
+  if(t=='Button')return'<button>'+(p.child?e(p.child,m):'OK')+'</button>';
+  if(t=='Column'||t=='Row'||t=='Card')return'<div style="'+ (t=='Row'?'display:flex;gap:8px':'') +'">'+ (p.children?.explicitList||[]).map(function(x){return e(x,m)}).join('') +'</div>';
+  if(t=='Table'){var h='<table border=1><tr>';p.columns.forEach(function(c){h+='<th>'+v(c)+'</th>'});h+='</tr>';p.rows.forEach(function(r){h+='<tr>';r.forEach(function(c){h+='<td>'+v(c)+'</td>'});h+='</tr>'});return h+'</table>'}
+ }return''
+}
+</script>
+</body></html>

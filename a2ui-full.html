@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>A2UI Full Demo</title>
+<style>
+*{box-sizing:border-box}body{font-family:system-ui;background:#0d1117;color:#c9d1d9;margin:0;height:100vh;display:flex}
+.panel{flex:1;padding:1rem;display:flex;flex-direction:column}.panel:first-child{border-right:1px solid #30363d;max-width:420px}
+h2{color:#58a6ff;margin:0 0 .5rem}.desc{color:#8b949e;font-size:.8rem;margin:0 0 .5rem}
+input,textarea{width:100%;background:#161b22;color:#c9d1d9;border:1px solid #30363d;border-radius:6px;padding:.5rem;font-size:.85rem}
+textarea{height:70px;resize:vertical}
+button{padding:.5rem 1rem;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-top:.5rem}
+button:hover{background:#2ea043}.flex-1{flex:1;overflow-y:auto}
+.render{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1rem;margin-top:.5rem}
+.render label{display:block;margin:.4rem 0 .1rem;font-size:.8rem;color:#8b949e}
+.render input,.render select{width:100%;background:#0d1117;color:#c9d1d9;border:1px solid #30363d;border-radius:4px;padding:.4rem;margin-bottom:.3rem}
+.render h1,.render h2{color:#58a6ff;margin:0 0 .5rem}
+.render table{width:100%;border-collapse:collapse;margin:.5rem 0}
+.render th{background:#1f6feb;color:#fff;padding:.4rem;text-align:left;font-size:.8rem}
+.render td{padding:.4rem;border-bottom:1px solid #30363d;font-size:.8rem}
+.render tr:nth-child(even) td{background:#1a1a2e}
+.render dialog{background:#161b22;color:#c9d1d9;border:1px solid #58a6ff;border-radius:12px;padding:1.5rem;max-width:450px}
+.render dialog::backdrop{background:rgba(0,0,0,.6)}
+.render .a2ui-btn{padding:.4rem 1rem;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer;margin:.25rem}
+pre{font-size:.7rem;overflow:auto;max-height:250px;background:#0d1117;border-radius:6px;padding:.5rem}
+.spinner{display:none;color:#d29922;font-size:.8rem}.spinner.active{display:block}
+</style></head>
+<body>
+<div class="panel">
+<h2>🎨 A2UI × DeepSeek</h2>
+<p class="desc">Type what UI you want. AI generates form, table, chart, modal, tabs...</p>
+<textarea id="prompt" placeholder="e.g. 一个用户注册表单，包含姓名邮箱手机号和一个提交按钮">一个用户注册表单，包含姓名邮箱手机号和一个提交按钮</textarea>
+<button id="genBtn">Generate UI</button>
+<div class="spinner" id="spinner">DeepSeek generating...</div>
+<details style="margin-top:.5rem"><summary style="color:#8b949e;cursor:pointer">Raw A2UI JSON</summary><pre id="json"></pre></details>
+</div>
+<div class="panel flex-1">
+<h2>🖥️ Generated UI</h2>
+<div class="flex-1 render" id="render"><p style="color:#8b949e">Click Generate UI — AI builds the interface</p></div>
+</div>
+<script>
+document.getElementById('genBtn').onclick = async () => {
+  const prompt = document.getElementById('prompt').value.trim();
+  if (!prompt) return;
+  document.getElementById('spinner').classList.add('active');
+  const r = await fetch('/a2ui/generate', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+  const d = await r.json();
+  document.getElementById('spinner').classList.remove('active');
+  if (d.error) { document.getElementById('render').innerHTML = `<p style="color:#f85149">Error: ${d.error}</p>`; return; }
+  document.getElementById('json').textContent = JSON.stringify(d.ui, null, 2);
+  renderA2UI(d.ui);
+};
+
+function renderA2UI(surface) {
+  const target = document.getElementById('render');
+  const comps = surface?.surfaceUpdate?.components;
+  if (!comps) { target.innerHTML = '<p>No components</p>'; return; }
+  const byId = {}; for (const c of comps) byId[c.id] = c.component;
+  const data = {};
+  const res = v => { if(!v)return''; if(v.literalString)return v.literalString; if(v.path)return data[v.path.replace(/\//g,'')]||''; return''; };
+  function r(id) {
+    const c = byId[id]; if (!c) return '';
+    for (const [t,p] of Object.entries(c)) { switch(t) {
+      case 'Text': return `<${p.usageHint||'span'} style="color:#58a6ff;font-size:${p.usageHint==='h1'?'1.5rem':p.usageHint==='h2'?'1.2rem':'inherit'}">${res(p.text)}</${p.usageHint||'span'}>`;
+      case 'TextField': { const k=(p.text?.path||'').replace(/\//g,''); return `<label>${res(p.label)}</label><input oninput="window._d.${k}=this.value" placeholder="${res(p.label)}">`; }
+      case 'Button': return `<button class="a2ui-btn" onclick="window._sub()">${p.child?r(p.child):'Submit'}</button>`;
+      case 'Card': return `<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:.75rem;margin:.5rem 0">${rl(p.children)}</div>`;
+      case 'Column': return `<div style="display:flex;flex-direction:column;gap:8px">${rl(p.children)}</div>`;
+      case 'Row': return `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${rl(p.children)}</div>`;
+      case 'MultipleChoice': { const k=(p.selections?.path||'').replace(/\//g,''); return `<label>${res(p.label)}</label><select onchange="window._d.${k}=this.value">${(p.options||[]).map(o=>`<option value="${res(o.value)}">${res(o.label)}</option>`).join('')}</select>`; }
+      case 'Checkbox': return `<label style="display:flex;align-items:center;gap:8px"><input type="checkbox" style="width:auto"> ${res(p.label)}</label>`;
+      case 'Slider': return `<label>${res(p.label)} <input type="range" min="${p.min||0}" max="${p.max||100}" value="${p.value||50}" style="width:100%"></label>`;
+      case 'DateTimeInput': return `<label>${res(p.label)}</label><input type="datetime-local" style="color-scheme:dark">`;
+      case 'Divider': return '<hr style="border-color:#30363d;margin:8px 0">';
+      case 'Tabs': { const tid='t'+Math.random().toString(36).slice(2,6); return `<div style="display:flex;gap:4px;margin:.5rem 0">${(p.tabs||[]).map((tab,i)=>`<button class="a2ui-btn" style="background:#0f3460;font-size:.8rem" onclick="document.querySelectorAll('[data-tab=${tid}]').forEach((d,j)=>d.style.display=j===${i}?'block':'none')">${res(tab)}</button>`).join('')}</div><div>${(p.contents||[]).map((cont,i)=>`<div data-tab="${tid}" style="display:${i===0?'block':'none'}">${l(cont)}</div>`).join('')}</div>`; }
+      case 'Modal': { const mid='m'+Math.random().toString(36).slice(2,6); return `<button class="a2ui-btn" onclick="document.getElementById('${mid}').showModal()">${res(p.triggerText)||'Open'}</button><dialog id="${mid}"><h3 style="color:#58a6ff;margin:0 0 1rem">${res(p.title)}</h3>${p.content?l(p.content):''}<br><button class="a2ui-btn" onclick="document.getElementById('${mid}').close()" style="margin-top:1rem">Close</button></dialog>`; }
+      case 'Table': { let h='<table><thead><tr>'+(p.columns||[]).map(c=>`<th>${res(c)}</th>`).join('')+'</tr></thead><tbody>'; for(const row of(p.rows||[]))h+='<tr>'+row.map(cell=>`<td>${res(cell)}</td>`).join('')+'</tr>'; return h+'</tbody></table>'; }
+      case 'Image': return p.url?`<img src="${res(p.url)}" style="max-width:100%;border-radius:8px" alt="${res(p.alt)||''}">`:'';
+      case 'Chart': return p.imageBase64?`<div style="margin:.5rem 0"><strong style="color:#58a6ff">${res(p.title)}</strong><br><img src="${p.imageBase64}" style="max-width:100%;border-radius:8px;border:1px solid #30363d"></div>`:`<div style="color:#f85149">Chart: no image</div>`;
+    }}
+    return '';
+  }
+  function rl(ch) { return (ch?.explicitList||[]).map(r).join(''); }
+  function l(obj) {
+    if (!obj) return '';
+    if (typeof obj==='string') return obj;
+    return `<div style="display:flex;flex-direction:column;gap:8px">${rl(obj)}</div>`;
+  }
+  window._d = data;
+  window._sub = () => {
+    const vals = Object.entries(data).filter(([,v])=>v).map(([k,v])=>`${k}: ${v}`).join(', ');
+    target.innerHTML += `<p style="color:#3fb950;margin-top:.5rem">✅ Submitted: ${vals}</p>`;
+  };
+  target.innerHTML = byId['root'] ? r('root') : '<p>No root</p>';
+}
+</script>
+</body>
+</html>

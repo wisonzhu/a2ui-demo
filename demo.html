@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AG-UI & A2UI - Interactive Demo</title>
+<style>
+* { box-sizing: border-box; }
+body { font-family: system-ui; max-width: 800px; margin: 1rem auto; background: #111; color: #eee; padding: 0 1rem; }
+h2 { border-bottom: 1px solid #333; padding-bottom: 0.25rem; }
+pre { background: #1a1a2e; padding: 0.75rem; border-radius: 8px; font-size: 0.8rem; overflow-x: auto; border: 1px solid #333; max-height: 300px; overflow-y: auto; }
+textarea { width: 100%; height: 50px; background: #222; color: #eee; border: 1px solid #555; border-radius: 8px; padding: 0.5rem; font-size: 0.9rem; }
+button { padding: 0.5rem 1.5rem; background: #0f3460; color: #eee; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; margin: 0.25rem; }
+button:hover { background: #1a508b; }
+.chat { border: 1px solid #333; border-radius: 8px; padding: 0.75rem; min-height: 120px; max-height: 300px; overflow-y: auto; margin: 0.5rem 0; }
+.msg { padding: 0.4rem 0.6rem; margin: 0.2rem 0; border-radius: 6px; font-size: 0.85rem; }
+.user { background: #1a508b; text-align: right; }
+.agent { background: #1b3a1b; }
+.event { background: #2a2a1a; font-family: monospace; font-size: 0.75rem; color: #ffd700; }
+.card { display: flex; gap: 1rem; }
+.card > div { flex: 1; }
+.form-group { margin: 0.5rem 0; }
+.form-group label { display: block; font-size: 0.8rem; color: #888; }
+.form-group input, .form-group select { width: 100%; padding: 0.4rem; background: #222; color: #eee; border: 1px solid #555; border-radius: 6px; }
+.result { color: #00d4aa; font-weight: bold; margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+
+<h1>🤖 AG-UI + A2UI — AI Agent UI Protocols</h1>
+
+<!-- ========== AG-UI Demo ========== -->
+<h2>📡 AG-UI: Agent-User Interaction Protocol</h2>
+<p style="color:#888;font-size:0.85rem">Event-stream protocol for real-time agent↔frontend communication</p>
+
+<div class="card">
+  <div>
+    <textarea id="aguiInput" placeholder="Type a message and hit Send..."></textarea>
+    <button id="aguiSend">Send</button>
+  </div>
+  <div>
+    <div class="chat" id="aguiChat">
+      <div class="event">AG-UI ready. Type a message to see the event stream.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== A2UI Demo ========== -->
+<h2>🎨 A2UI: Agent-to-User Interface</h2>
+<p style="color:#888;font-size:0.85rem">Google's declarative UI protocol — AI agents generate JSON, client renders natively</p>
+
+<div class="card">
+  <div>
+    <pre id="a2uiJson">Loading JSON...</pre>
+  </div>
+  <div id="a2uiRender">
+    <div class="form-group"><label>Name</label><input id="a2uiName" placeholder="Enter name"></div>
+    <div class="form-group"><label>Email</label><input id="a2uiEmail" placeholder="Enter email"></div>
+    <div class="form-group"><label>Role</label>
+      <select id="a2uiRole"><option value="">Select...</option><option value="dev">Developer</option><option value="design">Designer</option><option value="manager">Manager</option></select>
+    </div>
+    <button id="a2uiSubmit">✅ Submit</button>
+    <div class="result" id="a2uiResult"></div>
+  </div>
+</div>
+
+<script>
+// ===== AG-UI Protocol Demo =====
+const aguiChat = document.getElementById('aguiChat');
+const aguiInput = document.getElementById('aguiInput');
+
+function addAguiMsg(text, cls) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  d.textContent = text;
+  aguiChat.appendChild(d);
+  aguiChat.scrollTop = aguiChat.scrollHeight;
+}
+
+document.getElementById('aguiSend').onclick = async () => {
+  const text = aguiInput.value.trim();
+  if (!text) return;
+  
+  addAguiMsg('You: ' + text, 'user');
+  aguiInput.value = '';
+  
+  // Simulate AG-UI event stream
+  const events = [
+    { type: 'RUN_STARTED', runId: crypto.randomUUID() },
+    { type: 'TEXT_MESSAGE_START', messageId: 'msg-1', role: 'assistant' },
+    { type: 'TEXT_MESSAGE_CONTENT', messageId: 'msg-1', delta: `Received: "${text}". ` },
+    { type: 'TEXT_MESSAGE_CONTENT', messageId: 'msg-1', delta: 'AG-UI streams events: START → CONTENT* → END. ' },
+    { type: 'TEXT_MESSAGE_CONTENT', messageId: 'msg-1', delta: `⏰ ${new Date().toLocaleTimeString()}` },
+    { type: 'TEXT_MESSAGE_END', messageId: 'msg-1' },
+    { type: 'RUN_FINISHED', runId: '...' }
+  ];
+  
+  for (const ev of events) {
+    addAguiMsg(JSON.stringify(ev), 'event');
+    await new Promise(r => setTimeout(r, 200));
+  }
+  
+  addAguiMsg(`AG-UI agent: got "${text}" at ${new Date().toLocaleTimeString()}`, 'agent');
+};
+
+// ===== A2UI Demo =====
+const a2uiSurface = {
+  "version": "0.8",
+  "surfaceUpdate": {
+    "components": [
+      { "id": "root", "component": { "Column": { "children": { "explicitList": ["nameField","emailField","roleField","btn","result"] } } } },
+      { "id": "nameField", "component": { "TextField": { "label": { "literalString": "Name" }, "text": { "path": "/formData/name" } } } },
+      { "id": "emailField", "component": { "TextField": { "label": { "literalString": "Email" }, "text": { "path": "/formData/email" } } } },
+      { "id": "roleField", "component": { "MultipleChoice": { "label": { "literalString": "Role" }, "selections": { "path": "/formData/role" }, "options": [
+        { "label": { "literalString": "Developer" }, "value": { "literalString": "dev" } },
+        { "label": { "literalString": "Designer" }, "value": { "literalString": "design" } },
+        { "label": { "literalString": "Manager" }, "value": { "literalString": "manager" } }
+      ] } } },
+      { "id": "btn", "component": { "Button": { "child": "btnLabel", "action": { "name": "submit" } } } },
+      { "id": "btnLabel", "component": { "Text": { "text": { "literalString": "Submit" } } } },
+      { "id": "result", "component": { "Text": { "text": { "path": "/formData/result" } } } }
+    ]
+  }
+};
+
+document.getElementById('a2uiJson').textContent = JSON.stringify(a2uiSurface, null, 2);
+
+document.getElementById('a2uiSubmit').onclick = () => {
+  const name = document.getElementById('a2uiName').value;
+  const email = document.getElementById('a2uiEmail').value;
+  const role = document.getElementById('a2uiRole').value;
+  document.getElementById('a2uiResult').textContent = 
+    `✅ AI Agent rendered this form from JSON. Data: ${name} (${email}) — ${role || 'no role selected'}`;
+};
+</script>
+</body>
+</html>
